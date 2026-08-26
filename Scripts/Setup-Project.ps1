@@ -22,6 +22,7 @@ try {
     }
     if (-not $SkipTests) {
         & (Join-Path $PSScriptRoot 'Test.ps1') -EngineRoot $resolvedEngine -SkipBuild
+        & (Join-Path $PSScriptRoot 'Smoke-Gameplay.ps1') -EngineRoot $resolvedEngine
     }
     & (Join-Path $PSScriptRoot 'Verify-Environment.ps1') -EngineRoot $resolvedEngine
 } finally {
@@ -29,4 +30,3 @@ try {
 }
 
 Write-Host 'UEGT1 setup and verification completed successfully.' -ForegroundColor Green
-

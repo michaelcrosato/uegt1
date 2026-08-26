@@ -12,8 +12,8 @@ public class UEGT1 : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
-			"InputCore"
+			"InputCore",
+			"PhysicsCore"
 		});
 	}
 }
-

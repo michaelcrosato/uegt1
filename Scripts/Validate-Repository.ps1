@@ -11,13 +11,18 @@ $requiredFiles = @(
     '.vsconfig',
     'UEGT1.uproject',
     'Config\DefaultEngine.ini',
+    'Config\DefaultGameUserSettings.ini',
     'Config\DefaultInput.ini',
     'Content\Maps\Main.umap',
+    'Docs\Architecture.md',
+    'Docs\Playtest-0.1.md',
     'Source\UEGT1.Target.cs',
     'Source\UEGT1Editor.Target.cs',
     'Source\UEGT1\UEGT1.Build.cs',
     'Scripts\Build.ps1',
     'Scripts\Package.ps1',
+    'Scripts\Smoke-Gameplay.ps1',
+    'Scripts\Smoke-PackagedBuild.ps1',
     'Scripts\Test.ps1'
 )
 
@@ -45,6 +50,22 @@ if ($engineConfig -notmatch '(?m)^GameDefaultMap=/Game/Maps/Main\r?$') {
 }
 if ($engineConfig -match '(?im)^\s*SecurityToken\s*=\s*\S+') {
     $errors.Add('DefaultEngine.ini contains a non-empty security token.')
+}
+
+$inputConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultInput.ini') -Raw
+if ($inputConfig -notmatch '(?m)^DefaultPlayerInputClass=/Script/EnhancedInput\.EnhancedPlayerInput\r?$' -or
+    $inputConfig -notmatch '(?m)^DefaultInputComponentClass=/Script/EnhancedInput\.EnhancedInputComponent\r?$') {
+    $errors.Add('DefaultInput.ini must keep Enhanced Input enabled for the legacy mapping bridge used by the C++ bindings.')
+}
+
+$externalActorFolder = Join-Path $projectRoot 'Content\__ExternalActors__\Maps\Main'
+$externalActorCount = if (Test-Path -LiteralPath $externalActorFolder -PathType Container) {
+    (Get-ChildItem -LiteralPath $externalActorFolder -Recurse -File -Filter '*.uasset').Count
+} else {
+    0
+}
+if ($externalActorCount -lt 30) {
+    $errors.Add("The Main World Partition is incomplete; expected at least 30 external actor packages, found $externalActorCount.")
 }
 
 if ($errors.Count -gt 0) {

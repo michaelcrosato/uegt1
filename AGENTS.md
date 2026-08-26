@@ -16,7 +16,9 @@ Run commands from the repository root with PowerShell 7:
 ./Scripts/Generate-ProjectFiles.ps1
 ./Scripts/Build.ps1
 ./Scripts/Test.ps1
+./Scripts/Smoke-Gameplay.ps1
 ./Scripts/Package.ps1
+./Scripts/Smoke-PackagedBuild.ps1
 ./Scripts/Open-Editor.ps1
 ```
 
@@ -25,11 +27,12 @@ Run commands from the repository root with PowerShell 7:
 ## Verification
 
 - After C++ or build-rule changes, run `Scripts/Build.ps1` and the narrowest relevant automation tests.
-- After config/content changes, run `Scripts/Test.ps1`; visually exercise the changed flow when editor rendering or interaction matters.
-- Before a playtest handoff or release, run `Scripts/Package.ps1` and launch the archived Win64 executable.
+- After config/content changes, run `Scripts/Test.ps1` and `Scripts/Smoke-Gameplay.ps1`.
+- Before a playtest handoff or release, run `Scripts/Package.ps1` followed by `Scripts/Smoke-PackagedBuild.ps1`; visually inspect its screenshot under `Saved/Screenshots`.
 - Inspect `Saved/Logs/UEGT1.log` when an editor, commandlet, build, or automation run fails.
 - `Scripts/Setup-Project.ps1` is the end-to-end bootstrap: project generation, editor build, initial content, smoke tests, and environment verification.
 - Keep tests under the `UEGT1.*` automation namespace so the standard test command discovers them.
+- Read `Docs/Architecture.md` before changing system ownership, world generation, objective state, or performance assumptions. Keep its runtime log contracts synchronized with smoke scripts.
 
 ## Git workflow
 
