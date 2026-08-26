@@ -34,10 +34,10 @@ if ('UEGT1' -notin $project.Modules.Name) {
 }
 
 $engineConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultEngine.ini') -Raw
-if ($engineConfig -notmatch '(?m)^DefaultGraphicsRHI=DefaultGraphicsRHI_DX12$') {
+if ($engineConfig -notmatch '(?m)^DefaultGraphicsRHI=DefaultGraphicsRHI_DX12\r?$') {
     $errors.Add('DefaultEngine.ini does not make DirectX 12 the default Windows RHI.')
 }
-if ($engineConfig -notmatch '(?m)^GameDefaultMap=/Game/Maps/Main$') {
+if ($engineConfig -notmatch '(?m)^GameDefaultMap=/Game/Maps/Main\r?$') {
     $errors.Add('DefaultEngine.ini does not use /Game/Maps/Main as the game map.')
 }
 
@@ -47,4 +47,3 @@ if ($errors.Count -gt 0) {
 }
 
 Write-Host 'Repository structure and project configuration are valid.'
-

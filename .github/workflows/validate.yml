@@ -14,9 +14,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate Unreal project layout and settings
         shell: pwsh
         run: ./Scripts/Validate-Repository.ps1
-
