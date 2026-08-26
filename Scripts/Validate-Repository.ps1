@@ -19,6 +19,10 @@ $requiredFiles = @(
     'Source\UEGT1.Target.cs',
     'Source\UEGT1Editor.Target.cs',
     'Source\UEGT1\UEGT1.Build.cs',
+    'Source\UEGT1\Public\Settings\UEGT1GameUserSettings.h',
+    'Source\UEGT1\Private\Settings\UEGT1GameUserSettings.cpp',
+    'Source\UEGT1\Private\UI\SUEGT1Menu.h',
+    'Source\UEGT1\Private\UI\SUEGT1Menu.cpp',
     'Scripts\Build.ps1',
     'Scripts\Package.ps1',
     'Scripts\Smoke-Gameplay.ps1',
@@ -48,6 +52,9 @@ if ($engineConfig -notmatch '(?m)^DefaultGraphicsRHI=DefaultGraphicsRHI_DX12\r?$
 if ($engineConfig -notmatch '(?m)^GameDefaultMap=/Game/Maps/Main\r?$') {
     $errors.Add('DefaultEngine.ini does not use /Game/Maps/Main as the game map.')
 }
+if ($engineConfig -notmatch '(?m)^GameUserSettingsClassName=/Script/UEGT1\.UEGT1GameUserSettings\r?$') {
+    $errors.Add('DefaultEngine.ini does not select the persistent UEGT1 graphics settings class.')
+}
 if ($engineConfig -match '(?im)^\s*SecurityToken\s*=\s*\S+') {
     $errors.Add('DefaultEngine.ini contains a non-empty security token.')
 }
@@ -56,6 +63,17 @@ $inputConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultI
 if ($inputConfig -notmatch '(?m)^DefaultPlayerInputClass=/Script/EnhancedInput\.EnhancedPlayerInput\r?$' -or
     $inputConfig -notmatch '(?m)^DefaultInputComponentClass=/Script/EnhancedInput\.EnhancedInputComponent\r?$') {
     $errors.Add('DefaultInput.ini must keep Enhanced Input enabled for the legacy mapping bridge used by the C++ bindings.')
+}
+if ($inputConfig -notmatch 'ActionName="PauseMenu"[^\r\n]*Key=Escape' -or
+    $inputConfig -notmatch 'ActionName="PauseMenu"[^\r\n]*Key=Gamepad_Special_Right') {
+    $errors.Add('DefaultInput.ini must bind the game menu to Escape and the gamepad Menu/Start button.')
+}
+
+$settingsConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultGameUserSettings.ini') -Raw
+if ($settingsConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1GameUserSettings\]\r?$' -or
+    $settingsConfig -notmatch '(?m)^ResolutionSizeX=1920\r?$' -or
+    $settingsConfig -notmatch '(?m)^bFoliageEnabled=True\r?$') {
+    $errors.Add('DefaultGameUserSettings.ini does not define the recommended persistent UEGT1 profile.')
 }
 
 $externalActorFolder = Join-Path $projectRoot 'Content\__ExternalActors__\Maps\Main'

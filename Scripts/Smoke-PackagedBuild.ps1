@@ -26,7 +26,9 @@ $screenshotFolder = Join-Path $projectRoot 'Saved\Screenshots'
 New-Item -ItemType Directory -Path $logFolder,$screenshotFolder -Force | Out-Null
 $runtimeLog = Join-Path $logFolder 'SignalGrove-PackagedSmoke.log'
 $screenshot = Join-Path $screenshotFolder 'SignalGrove-PackagedSmoke.png'
-foreach ($oldArtifact in @($runtimeLog, $screenshot)) {
+$menuLog = Join-Path $logFolder 'SignalGrove-MenuSmoke.log'
+$menuScreenshot = Join-Path $screenshotFolder 'SignalGrove-MenuSmoke.png'
+foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot)) {
     if (Test-Path -LiteralPath $oldArtifact) {
         Remove-Item -LiteralPath $oldArtifact -Force
     }
@@ -39,6 +41,7 @@ $arguments = @(
     '-ResY=1080',
     '-unattended',
     '-nosplash',
+    '-UEGT1SmokeResetSettings',
     '-UEGT1SmokeComplete',
     "-UEGT1SmokeCapture=$screenshot",
     "-abslog=$runtimeLog"
@@ -62,6 +65,7 @@ if (-not (Test-Path -LiteralPath $screenshot -PathType Leaf)) {
 $logText = Get-Content -LiteralPath $runtimeLog -Raw
 $requiredSignals = @(
     'Runtime PlayerStart ready:',
+    'Automated smoke restored recommended settings before capture.',
     'Automated view: Location=V(Y=-1300.00',
     'Signal Grove ready: Seed=7319 Tiles=25 Instances=1350 Waystones=3',
     'Waystone activated: Id=EastRise',
@@ -85,3 +89,81 @@ if ($logText.Contains("Couldn't spawn Pawn")) {
 Write-Host 'Packaged gameplay smoke passed: DX12 world load, objective completion, and rendered frame verified.'
 Write-Host "Runtime log: $runtimeLog"
 Write-Host "Screenshot: $screenshot"
+
+$menuArguments = @(
+    '-RenderOffscreen',
+    '-Windowed',
+    '-ResX=1920',
+    '-ResY=1080',
+    '-unattended',
+    '-nosplash',
+    '-UEGT1SmokeResetSettings',
+    "-UEGT1SmokeMenuCapture=$menuScreenshot",
+    "-abslog=$menuLog"
+)
+Write-Host 'Running rendered menu/settings/quit smoke'
+$menuProcess = Start-Process -FilePath $Executable -ArgumentList $menuArguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Hidden -PassThru
+if (-not $menuProcess.WaitForExit($TimeoutSeconds * 1000)) {
+    Stop-Process -Id $menuProcess.Id -Force
+    throw "Packaged menu smoke did not finish within $TimeoutSeconds seconds."
+}
+if ($menuProcess.ExitCode -ne 0) {
+    throw "Packaged menu smoke exited with code $($menuProcess.ExitCode). Inspect $menuLog."
+}
+if (-not (Test-Path -LiteralPath $menuLog -PathType Leaf) -or -not (Test-Path -LiteralPath $menuScreenshot -PathType Leaf)) {
+    throw 'Packaged menu smoke did not create both its runtime log and screenshot.'
+}
+
+$menuLogText = Get-Content -LiteralPath $menuLog -Raw
+$requiredMenuSignals = @(
+    'Automated smoke restored recommended settings before capture.',
+    'Game menu opened: Initial=false',
+    'Graphics settings page opened.',
+    'Automated graphics menu screenshot requested:',
+    'Graphics settings applied: Quality=-1 Resolution=X=1920 Y=1080 Scale=100 VSync=On Optional=AllOn',
+    'Automated menu smoke restored recommended settings.',
+    'Menu quit requested; exiting to desktop.'
+)
+foreach ($signal in $requiredMenuSignals) {
+    if (-not $menuLogText.Contains($signal)) {
+        throw "Packaged menu smoke is missing expected log signal: $signal"
+    }
+}
+
+$packagedRoot = Split-Path -Parent $Executable
+$settingsFile = Get-ChildItem -LiteralPath $packagedRoot -Recurse -File -Filter 'GameUserSettings.ini' -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -like '*\Saved\Config\Windows\GameUserSettings.ini' } |
+    Select-Object -First 1
+if (-not $settingsFile) {
+    throw 'Packaged menu smoke did not persist GameUserSettings.ini.'
+}
+$settingsText = Get-Content -LiteralPath $settingsFile.FullName -Raw
+$customSectionMatch = [regex]::Match(
+    $settingsText,
+    '(?ms)^\[/Script/UEGT1\.UEGT1GameUserSettings\]\r?\n(?<Body>.*?)(?=^\[|\z)'
+)
+if (-not $customSectionMatch.Success) {
+    throw 'Persisted settings are missing the UEGT1 custom settings section.'
+}
+$customSection = $customSectionMatch.Groups['Body'].Value
+foreach ($setting in @(
+    'DesiredScreenWidth=1920',
+    'DesiredScreenHeight=1080'
+)) {
+    if (-not $customSection.Contains($setting)) {
+        throw "Packaged menu smoke did not persist recommended setting: $setting"
+    }
+}
+if ($customSection -match '(?m)^b[A-Za-z]+Enabled=False\r?$') {
+    throw 'Packaged menu smoke persisted an optional graphics feature as disabled after restoring recommendations.'
+}
+if ($settingsText -notmatch '(?m)^sg\.ResolutionQuality=100(?:\.0+)?\r?$' -or
+    $settingsText -notmatch '(?m)^sg\.ViewDistanceQuality=2\r?$' -or
+    $settingsText -notmatch '(?m)^sg\.TextureQuality=3\r?$') {
+    throw 'Packaged menu smoke did not persist the recommended quality profile.'
+}
+
+Write-Host 'Packaged menu smoke passed: settings screen rendered, recommendations persisted, and the in-menu quit path exited cleanly.'
+Write-Host "Menu log: $menuLog"
+Write-Host "Menu screenshot: $menuScreenshot"
+Write-Host "Persisted settings: $($settingsFile.FullName)"

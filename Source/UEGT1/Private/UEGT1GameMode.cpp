@@ -12,6 +12,7 @@
 #include "Materials/MaterialInterface.h"
 #include "Player/UEGT1ExplorerCharacter.h"
 #include "Player/UEGT1PlayerController.h"
+#include "Settings/UEGT1GameUserSettings.h"
 #include "TimerManager.h"
 #include "UI/UEGT1HUD.h"
 #include "UEGT1LogChannels.h"
@@ -60,11 +61,29 @@ void AUEGT1GameMode::StartPlay()
 
 	Super::StartPlay();
 
+	if (FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeResetSettings")))
+	{
+		if (UUEGT1GameUserSettings* Settings = UUEGT1GameUserSettings::Get())
+		{
+			Settings->SetRecommendedDefaults();
+			Settings->ApplySettings(false);
+			Settings->ConfirmVideoMode();
+			Settings->SaveSettings();
+			UE_LOG(LogUEGT1, Display, TEXT("Automated smoke restored recommended settings before capture."));
+		}
+	}
+
 	if (FParse::Value(FCommandLine::Get(), TEXT("UEGT1SmokeCapture="), AutomatedCapturePath))
 	{
 		AutomatedCapturePath = FPaths::ConvertRelativePathToFull(AutomatedCapturePath);
 		GetWorldTimerManager().SetTimer(CaptureTimerHandle, this, &AUEGT1GameMode::CaptureAutomatedSmokeFrame, 4.0f, false);
 		UE_LOG(LogUEGT1, Display, TEXT("Automated gameplay capture scheduled: %s"), *AutomatedCapturePath);
+	}
+	if (FParse::Value(FCommandLine::Get(), TEXT("UEGT1SmokeMenuCapture="), AutomatedMenuCapturePath))
+	{
+		AutomatedMenuCapturePath = FPaths::ConvertRelativePathToFull(AutomatedMenuCapturePath);
+		GetWorldTimerManager().SetTimer(MenuCaptureTimerHandle, this, &AUEGT1GameMode::CaptureAutomatedMenuFrame, 4.0f, false);
+		UE_LOG(LogUEGT1, Display, TEXT("Automated menu capture scheduled: %s"), *AutomatedMenuCapturePath);
 	}
 }
 
@@ -115,4 +134,35 @@ void AUEGT1GameMode::FinishAutomatedSmokeRun()
 {
 	UE_LOG(LogUEGT1, Display, TEXT("Automated gameplay smoke completed."));
 	FGenericPlatformMisc::RequestExit(false);
+}
+
+void AUEGT1GameMode::CaptureAutomatedMenuFrame()
+{
+	if (AUEGT1PlayerController* PlayerController = Cast<AUEGT1PlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		PlayerController->OpenGraphicsMenuForAutomation();
+	}
+	IFileManager::Get().MakeDirectory(*FPaths::GetPath(AutomatedMenuCapturePath), true);
+	FScreenshotRequest::RequestScreenshot(AutomatedMenuCapturePath, true, false);
+	UE_LOG(LogUEGT1, Display, TEXT("Automated graphics menu screenshot requested: %s"), *AutomatedMenuCapturePath);
+	GetWorldTimerManager().SetTimer(ExitTimerHandle, this, &AUEGT1GameMode::FinishAutomatedMenuSmokeRun, 3.0f, false);
+}
+
+void AUEGT1GameMode::FinishAutomatedMenuSmokeRun()
+{
+	if (UUEGT1GameUserSettings* Settings = UUEGT1GameUserSettings::Get())
+	{
+		Settings->SetRecommendedDefaults();
+		Settings->ApplySettings(false);
+		Settings->ConfirmVideoMode();
+		Settings->SaveSettings();
+		UE_LOG(LogUEGT1, Display, TEXT("Automated menu smoke restored recommended settings."));
+	}
+	if (AUEGT1PlayerController* PlayerController = Cast<AUEGT1PlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		PlayerController->RequestQuitFromMenu();
+		return;
+	}
+	UE_LOG(LogUEGT1, Error, TEXT("Automated menu smoke could not find the player controller."));
+	FGenericPlatformMisc::RequestExit(true);
 }

@@ -17,10 +17,14 @@ public:
 
 private:
 	void CaptureAutomatedSmokeFrame();
+	void CaptureAutomatedMenuFrame();
 	void FinishAutomatedSmokeRun();
+	void FinishAutomatedMenuSmokeRun();
 
 	FString AutomatedCapturePath;
+	FString AutomatedMenuCapturePath;
 	FTimerHandle CaptureTimerHandle;
+	FTimerHandle MenuCaptureTimerHandle;
 	FTimerHandle ExitTimerHandle;
 
 	UPROPERTY(Transient)

@@ -4,6 +4,7 @@
 #include "Components/SceneComponent.h"
 #include "Engine/CollisionProfile.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Settings/UEGT1GameUserSettings.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/UEGT1Palette.h"
 #include "World/UEGT1WorldLayout.h"
@@ -65,6 +66,14 @@ void AUEGT1BiomeTile::BeginPlay()
 {
 	Super::BeginPlay();
 	RebuildTile();
+	UUEGT1GameUserSettings::OnGraphicsSettingsApplied.AddUObject(this, &AUEGT1BiomeTile::ApplyGraphicsSettings);
+	ApplyGraphicsSettings();
+}
+
+void AUEGT1BiomeTile::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UUEGT1GameUserSettings::OnGraphicsSettingsApplied.RemoveAll(this);
+	Super::EndPlay(EndPlayReason);
 }
 
 void AUEGT1BiomeTile::RebuildTile()
@@ -213,4 +222,13 @@ int32 AUEGT1BiomeTile::GetGeneratedInstanceCount() const
 {
 	return GroundInstances->GetInstanceCount() + TrailInstances->GetInstanceCount() + TrunkInstances->GetInstanceCount() +
 		CanopyInstances->GetInstanceCount() + RockInstances->GetInstanceCount() + GrassInstances->GetInstanceCount();
+}
+
+void AUEGT1BiomeTile::ApplyGraphicsSettings()
+{
+	const UUEGT1GameUserSettings* Settings = UUEGT1GameUserSettings::Get();
+	const bool bShowFoliage = !Settings || Settings->IsFeatureEnabled(EUEGT1GraphicsFeature::Foliage);
+	TrunkInstances->SetVisibility(bShowFoliage, true);
+	CanopyInstances->SetVisibility(bShowFoliage, true);
+	GrassInstances->SetVisibility(bShowFoliage, true);
 }

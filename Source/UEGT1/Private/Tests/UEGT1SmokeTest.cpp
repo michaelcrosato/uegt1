@@ -5,12 +5,14 @@
 #include "Engine/Level.h"
 #include "Engine/World.h"
 #include "GameFramework/InputSettings.h"
+#include "HAL/IConsoleManager.h"
 #include "Gameplay/UEGT1MilestoneGameState.h"
 #include "Gameplay/UEGT1Waystone.h"
 #include "Interaction/UEGT1Interactable.h"
 #include "Misc/ConfigCacheIni.h"
 #include "Player/UEGT1ExplorerCharacter.h"
 #include "Player/UEGT1PlayerController.h"
+#include "Settings/UEGT1GameUserSettings.h"
 #include "UEGT1GameMode.h"
 #include "UI/UEGT1HUD.h"
 #include "World/UEGT1WorldLayout.h"
@@ -33,7 +35,7 @@ bool FUEGT1ProjectConfigurationTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("DirectX 12 is the Windows default RHI"), DefaultRHI, FString(TEXT("DefaultGraphicsRHI_DX12")));
 
 	const UInputSettings* InputSettings = GetDefault<UInputSettings>();
-	for (const FName Action : { FName(TEXT("Jump")), FName(TEXT("Sprint")), FName(TEXT("Interact")), FName(TEXT("ToggleDiagnostics")) })
+	for (const FName Action : { FName(TEXT("Jump")), FName(TEXT("Sprint")), FName(TEXT("Interact")), FName(TEXT("ToggleDiagnostics")), FName(TEXT("PauseMenu")) })
 	{
 		TArray<FInputActionKeyMapping> Mappings;
 		InputSettings->GetActionMappingByName(Action, Mappings);
@@ -46,6 +48,52 @@ bool FUEGT1ProjectConfigurationTest::RunTest(const FString& Parameters)
 		InputSettings->GetAxisMappingByName(Axis, Mappings);
 		TestTrue(*FString::Printf(TEXT("%s has an input mapping"), *Axis.ToString()), !Mappings.IsEmpty());
 	}
+	return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FUEGT1GraphicsSettingsTest,
+	"UEGT1.Smoke.GraphicsSettings",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUEGT1GraphicsSettingsTest::RunTest(const FString& Parameters)
+{
+	UUEGT1GameUserSettings* Settings = UUEGT1GameUserSettings::Get();
+	TestNotNull(TEXT("The engine uses Signal Grove game user settings"), Settings);
+	if (!Settings)
+	{
+		return false;
+	}
+
+	Settings->SetRecommendedDefaults();
+	TestEqual(TEXT("Recommended resolution targets 1080p"), Settings->GetScreenResolution(), FIntPoint(1920, 1080));
+	TestEqual(TEXT("Recommended view distance targets High"), Settings->GetViewDistanceQuality(), 2);
+	TestEqual(TEXT("Recommended textures target Epic"), Settings->GetTextureQuality(), 3);
+	TestTrue(TEXT("Recommended resolution scale targets 100 percent"), FMath::IsNearlyEqual(Settings->GetResolutionScaleNormalized(), 1.0f));
+	TestTrue(TEXT("Recommended settings enable every optional feature"), Settings->AreAllOptionalFeaturesEnabled());
+
+	Settings->SetAllOptionalFeaturesEnabled(false);
+	TestFalse(TEXT("The master switch disables every optional feature"), Settings->AreAnyOptionalFeaturesEnabled());
+	for (uint8 Index = 0; Index < static_cast<uint8>(EUEGT1GraphicsFeature::Count); ++Index)
+	{
+		const EUEGT1GraphicsFeature Feature = static_cast<EUEGT1GraphicsFeature>(Index);
+		TestFalse(*FString::Printf(TEXT("%s can be disabled"), *UUEGT1GameUserSettings::GetFeatureDisplayName(Feature).ToString()), Settings->IsFeatureEnabled(Feature));
+	}
+
+	Settings->ApplyNonResolutionSettings();
+	const IConsoleVariable* Fog = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Fog"));
+	const IConsoleVariable* Bloom = IConsoleManager::Get().FindConsoleVariable(TEXT("r.BloomQuality"));
+	const IConsoleVariable* Lumen = IConsoleManager::Get().FindConsoleVariable(TEXT("r.Lumen.DiffuseIndirect.Allow"));
+	TestTrue(TEXT("The fog renderer is disabled by the feature switch"), Fog && Fog->GetInt() == 0);
+	TestTrue(TEXT("Bloom is disabled by the feature switch"), Bloom && Bloom->GetInt() == 0);
+	TestTrue(TEXT("Lumen GI is disabled by the feature switch"), Lumen && Lumen->GetInt() == 0);
+
+	Settings->SetRecommendedDefaults();
+	Settings->ApplyNonResolutionSettings();
+	TestTrue(TEXT("The master switch re-enables every optional feature"), Settings->AreAllOptionalFeaturesEnabled());
+	TestTrue(TEXT("The fog renderer is restored by the master switch"), Fog && Fog->GetInt() > 0);
+	TestTrue(TEXT("Bloom is restored by the master switch"), Bloom && Bloom->GetInt() > 0);
+	TestTrue(TEXT("Lumen GI is restored by the master switch"), Lumen && Lumen->GetInt() > 0);
 	return !HasAnyErrors();
 }
 

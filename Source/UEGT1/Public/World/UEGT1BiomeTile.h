@@ -18,6 +18,7 @@ public:
 	AUEGT1BiomeTile();
 	virtual void OnConstruction(const FTransform& Transform) override;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION(BlueprintCallable, Category = "UEGT1|World")
 	void InitializeTile(FIntPoint InTileCoordinate, int32 InWorldSeed);
@@ -51,6 +52,7 @@ private:
 	void GenerateGroundAndTrails(FRandomStream& Random);
 	void GenerateVegetation(FRandomStream& Random);
 	void GenerateBoundaryCliffs(FRandomStream& Random);
+	void ApplyGraphicsSettings();
 	UHierarchicalInstancedStaticMeshComponent* CreateInstanceComponent(const FName Name, UStaticMesh* Mesh, bool bCollision);
 	void AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color);
 	bool IsInsideTile(const FVector& WorldPosition, float Padding = 0.0f) const;

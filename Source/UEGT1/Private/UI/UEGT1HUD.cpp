@@ -5,12 +5,18 @@
 #include "Gameplay/UEGT1MilestoneGameState.h"
 #include "Interaction/UEGT1InteractionComponent.h"
 #include "Player/UEGT1ExplorerCharacter.h"
+#include "Player/UEGT1PlayerController.h"
 #include "World/UEGT1Palette.h"
 
 void AUEGT1HUD::DrawHUD()
 {
 	Super::DrawHUD();
 	if (!Canvas)
+	{
+		return;
+	}
+	if (const AUEGT1PlayerController* PlayerController = Cast<AUEGT1PlayerController>(GetOwningPlayerController());
+		PlayerController && PlayerController->IsMenuOpen())
 	{
 		return;
 	}
@@ -43,7 +49,7 @@ void AUEGT1HUD::DrawObjectivePanel(float ScreenWidth, float ScreenHeight)
 
 	if (GetWorld()->GetTimeSeconds() < 12.0f)
 	{
-		DrawText(TEXT("WASD move   MOUSE look   SHIFT sprint   SPACE jump   E interact   F3 diagnostics"),
+		DrawText(TEXT("WASD move   MOUSE look   SHIFT sprint   SPACE jump   E interact   ESC menu   F3 diagnostics"),
 			FLinearColor(0.72f, 0.82f, 0.73f, 0.95f), 32.0f, ScreenHeight - 42.0f, GEngine->GetSmallFont(), 0.85f, false);
 	}
 

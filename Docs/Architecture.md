@@ -1,4 +1,4 @@
-# Signal Grove v0.1 architecture
+# Signal Grove v0.2 architecture
 
 Signal Grove is a small vertical slice built to remain easy to extend. Durable behavior lives in C++; the checked-in `Main` world supplies authored placement through World Partition and One File Per Actor. The runtime director can reconstruct critical content if a map is damaged or temporarily empty.
 
@@ -8,6 +8,8 @@ Signal Grove is a small vertical slice built to remain easy to extend. Durable b
 AUEGT1GameMode
 ├── AUEGT1ExplorerCharacter
 │   └── UUEGT1InteractionComponent ── IUEGT1Interactable
+├── AUEGT1PlayerController
+│   └── SUEGT1Menu ── UUEGT1GameUserSettings
 ├── AUEGT1MilestoneGameState
 │   ├── AUEGT1Waystone × 3
 │   └── AUEGT1Sanctuary
@@ -17,11 +19,12 @@ AUEGT1GameMode
 ```
 
 - `AUEGT1ExplorerCharacter` owns first-person movement, camera feel, sprinting, jumping, and input dispatch.
+- `AUEGT1PlayerController` owns launch/pause menu state, input mode, and the quit request. `SUEGT1Menu` owns presentation while `UUEGT1GameUserSettings` owns persisted graphics state and runtime console-variable application.
 - Input uses UE's supported legacy action/axis mapping bridge on the Enhanced Input player/component classes. This keeps v0.1 bindings data-light while leaving the plugin explicit for a later Input Action migration.
 - `UUEGT1InteractionComponent` performs a throttled visibility trace and talks only through `IUEGT1Interactable`. New usable objects should implement that interface instead of changing the player.
 - `AUEGT1MilestoneGameState` is the authority for registered and activated Waystone IDs. The HUD and sanctuary read or subscribe to this state; Waystones do not reach into either consumer.
 - `AUEGT1WorldDirector` validates world composition at startup. Missing biome/gameplay actors are recreated deterministically from `UEGT1WorldLayout`.
-- `AUEGT1BiomeTile` generates ground, trails, trees, rocks, grass, and boundary shapes into hierarchical instanced mesh components. It does not create an Actor per prop.
+- `AUEGT1BiomeTile` generates ground, trails, trees, rocks, grass, and boundary shapes into hierarchical instanced mesh components. It does not create an Actor per prop and listens for graphics changes so the foliage switch immediately hides or restores its vegetation layers.
 - `AUEGT1HUD` is deliberately code-driven for this foundation. A later CommonUI/UMG layer can replace presentation without changing gameplay state.
 
 ## World and visual contract
@@ -36,6 +39,7 @@ The map is World Partition with 36 external actor packages. This is intentionall
 
 - Target: 1920×1080, 60 fps on an RTX 3060-class GPU.
 - Default quality: level 2 for view distance, shadows, Lumen GI/reflections, post, effects, foliage, and shading; level 3 textures.
+- The recommended persistent profile is borderless 1920×1080 at 60 fps, VSync on, 100% resolution scale, and all optional effects enabled. Explicit feature switches override the related scalability result without changing unrelated groups.
 - Current authored biome: 1,350 instanced primitives across 25 tile actors.
 - HISM culling is configured per prop layer; only ground and major rocks/trunks participate in collision.
 - Interaction traces run at 20 Hz rather than every render frame.
@@ -57,4 +61,4 @@ Measure before increasing instance density, light radius/count, shadowed movable
 - `F3` toggles frame rate, world position, and focused interactable in-game.
 - `uegt1.Debug.DrawInteraction 1` draws interaction traces.
 - `Scripts/Smoke-Gameplay.ps1` verifies the authored World Partition load and expected content headlessly.
-- `Scripts/Smoke-PackagedBuild.ps1` completes the objective in a Development package, captures a 1080p frame, and exits. `-UEGT1SmokeComplete` and `-UEGT1SmokeCapture=<path>` exist only to make that deterministic verification possible.
+- `Scripts/Smoke-PackagedBuild.ps1` performs two rendered Development-package runs: it completes the objective and captures the world, then renders the graphics menu, restores and verifies persistent recommendations, and exits through the menu quit path. The `-UEGT1Smoke*` arguments exist only for deterministic verification.

@@ -2,7 +2,7 @@
 
 UEGT1 is the Unreal Engine 5.8 C++ project for **Signal Grove**, a first-person low-poly open-world foundation targeting Win64, DirectX 12, and Shader Model 6.
 
-The v0.1 vertical slice is playable: explore a deterministic forest, follow three paths, stabilize three reusable interactable Waystones, and restore the central sanctuary. The checked-in map uses World Partition and One File Per Actor; repeated biome geometry uses hierarchical instancing instead of one Actor per prop.
+The v0.2 vertical slice is playable: explore a deterministic forest, follow three paths, stabilize three reusable interactable Waystones, and restore the central sanctuary. A launch/pause menu now provides persistent display, quality, and per-feature graphics controls plus an in-game quit path. The checked-in map uses World Partition and One File Per Actor; repeated biome geometry uses hierarchical instancing instead of one Actor per prop.
 
 ## Requirements
 
@@ -44,4 +44,4 @@ Common individual commands:
 
 Generated folders, IDE state, test reports, logs, local builds, and secrets are intentionally ignored. Keep Unreal source assets (`Content/**/*.uasset` and `Content/**/*.umap`) under Git when they are intentional project content.
 
-See [the architecture guide](Docs/Architecture.md) for system boundaries and extension rules, and [the v0.1 playtest guide](Docs/Playtest-0.1.md) for controls, the test loop, and known limits.
+See [the architecture guide](Docs/Architecture.md) for system boundaries and extension rules, and [the playtest guide](Docs/Playtest-0.1.md) for controls, graphics settings, the test loop, and known limits.

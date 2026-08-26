@@ -15,5 +15,11 @@ public class UEGT1 : ModuleRules
 			"InputCore",
 			"PhysicsCore"
 		});
+
+		PrivateDependencyModuleNames.AddRange(new[]
+		{
+			"Slate",
+			"SlateCore"
+		});
 	}
 }
