@@ -15,10 +15,15 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 $projectFile = Join-Path $projectRoot 'UEGT1.uproject'
 $resolvedEngine = & (Join-Path $PSScriptRoot 'Resolve-Engine.ps1') -EngineRoot $EngineRoot
 $buildScript = Join-Path $resolvedEngine 'Engine\Build\BatchFiles\Build.bat'
+$cleanScript = Join-Path $resolvedEngine 'Engine\Build\BatchFiles\Clean.bat'
 $targetName = if ($Target -eq 'Editor') { 'UEGT1Editor' } else { 'UEGT1' }
 $arguments = @($targetName, 'Win64', $Configuration, $projectFile, '-WaitMutex', '-NoHotReloadFromIDE')
 if ($Clean) {
-    $arguments += '-Clean'
+    Write-Host "Cleaning $targetName Win64 $Configuration with $resolvedEngine"
+    & $cleanScript @arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unreal clean failed with exit code $LASTEXITCODE."
+    }
 }
 
 Write-Host "Building $targetName Win64 $Configuration with $resolvedEngine"
@@ -26,4 +31,3 @@ Write-Host "Building $targetName Win64 $Configuration with $resolvedEngine"
 if ($LASTEXITCODE -ne 0) {
     throw "Unreal build failed with exit code $LASTEXITCODE."
 }
-
