@@ -12,6 +12,7 @@ Saved/
 *.VC.opendb
 *.sdf
 *.sln
+*.slnx
 *.suo
 *.opensdf
 *.user
@@ -45,4 +46,3 @@ Desktop.ini
 *.p12
 *.key
 *.pem
-

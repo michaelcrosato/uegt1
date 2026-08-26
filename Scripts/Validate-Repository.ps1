@@ -11,10 +11,13 @@ $requiredFiles = @(
     '.vsconfig',
     'UEGT1.uproject',
     'Config\DefaultEngine.ini',
+    'Config\DefaultInput.ini',
+    'Content\Maps\Main.umap',
     'Source\UEGT1.Target.cs',
     'Source\UEGT1Editor.Target.cs',
     'Source\UEGT1\UEGT1.Build.cs',
     'Scripts\Build.ps1',
+    'Scripts\Package.ps1',
     'Scripts\Test.ps1'
 )
 
@@ -39,6 +42,9 @@ if ($engineConfig -notmatch '(?m)^DefaultGraphicsRHI=DefaultGraphicsRHI_DX12\r?$
 }
 if ($engineConfig -notmatch '(?m)^GameDefaultMap=/Game/Maps/Main\r?$') {
     $errors.Add('DefaultEngine.ini does not use /Game/Maps/Main as the game map.')
+}
+if ($engineConfig -match '(?im)^\s*SecurityToken\s*=\s*\S+') {
+    $errors.Add('DefaultEngine.ini contains a non-empty security token.')
 }
 
 if ($errors.Count -gt 0) {

@@ -16,6 +16,7 @@ Run commands from the repository root with PowerShell 7:
 ./Scripts/Generate-ProjectFiles.ps1
 ./Scripts/Build.ps1
 ./Scripts/Test.ps1
+./Scripts/Package.ps1
 ./Scripts/Open-Editor.ps1
 ```
 
@@ -25,6 +26,7 @@ Run commands from the repository root with PowerShell 7:
 
 - After C++ or build-rule changes, run `Scripts/Build.ps1` and the narrowest relevant automation tests.
 - After config/content changes, run `Scripts/Test.ps1`; visually exercise the changed flow when editor rendering or interaction matters.
+- Before a playtest handoff or release, run `Scripts/Package.ps1` and launch the archived Win64 executable.
 - Inspect `Saved/Logs/UEGT1.log` when an editor, commandlet, build, or automation run fails.
 - `Scripts/Setup-Project.ps1` is the end-to-end bootstrap: project generation, editor build, initial content, smoke tests, and environment verification.
 - Keep tests under the `UEGT1.*` automation namespace so the standard test command discovers them.
@@ -35,4 +37,3 @@ Run commands from the repository root with PowerShell 7:
 - Make coherent commits with imperative messages. Review staged files before every commit.
 - The repository hook and GitHub workflow validate structure and guard against generated files; they do not replace a real local UE build.
 - Do not rewrite or discard user changes. Avoid committing unrelated work.
-

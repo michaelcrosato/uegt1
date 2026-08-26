@@ -34,8 +34,8 @@ Common individual commands:
 ./Scripts/Generate-ProjectFiles.ps1
 ./Scripts/Build.ps1
 ./Scripts/Test.ps1
+./Scripts/Package.ps1
 ./Scripts/Open-Editor.ps1
 ```
 
 Generated folders, IDE state, test reports, logs, local builds, and secrets are intentionally ignored. Keep Unreal source assets (`Content/**/*.uasset` and `Content/**/*.umap`) under Git when they are intentional project content.
-
