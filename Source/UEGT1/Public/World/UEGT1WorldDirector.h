@@ -17,5 +17,6 @@ protected:
 
 private:
 	void EnsureBiomeTiles();
+	void EnsureTown();
 	void EnsureGameplayActors();
 };

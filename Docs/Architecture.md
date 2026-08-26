@@ -1,6 +1,6 @@
-# Signal Grove v0.2 architecture
+# Signal Grove v0.3 architecture
 
-Signal Grove is a small vertical slice built to remain easy to extend. Durable behavior lives in C++; the checked-in `Main` world supplies authored placement through World Partition and One File Per Actor. The runtime director can reconstruct critical content if a map is damaged or temporarily empty.
+Signal Grove is a moderately sized starting region built to remain easy to extend. Durable behavior lives in C++; the checked-in `Main` world supplies authored placement through World Partition and One File Per Actor. A deterministic regional sampler is the shared source of truth for editor authoring, runtime fallback, diagnostics, and automation.
 
 ## Runtime ownership
 
@@ -15,7 +15,12 @@ AUEGT1GameMode
 │   └── AUEGT1Sanctuary
 ├── AUEGT1HUD
 └── AUEGT1WorldDirector
-    └── AUEGT1BiomeTile × 25 (six HISM layers per tile)
+    ├── AUEGT1Town (ten HISM layers)
+    └── AUEGT1BiomeTile × 121 (eleven HISM layers per tile)
+
+UUEGT1RegionSettings (DefaultGame.ini)
+└── UEGT1WorldLayout::SampleRegion(position)
+    └── biome weights + surface height + water depth + climate
 ```
 
 - `AUEGT1ExplorerCharacter` owns first-person movement, camera feel, sprinting, jumping, and input dispatch.
@@ -23,24 +28,29 @@ AUEGT1GameMode
 - Input uses UE's supported legacy action/axis mapping bridge on the Enhanced Input player/component classes. This keeps v0.1 bindings data-light while leaving the plugin explicit for a later Input Action migration.
 - `UUEGT1InteractionComponent` performs a throttled visibility trace and talks only through `IUEGT1Interactable`. New usable objects should implement that interface instead of changing the player.
 - `AUEGT1MilestoneGameState` is the authority for registered and activated Waystone IDs. The HUD and sanctuary read or subscribe to this state; Waystones do not reach into either consumer.
-- `AUEGT1WorldDirector` validates world composition at startup. Missing biome/gameplay actors are recreated deterministically from `UEGT1WorldLayout`.
-- `AUEGT1BiomeTile` generates ground, trails, trees, rocks, grass, and boundary shapes into hierarchical instanced mesh components. It does not create an Actor per prop and listens for graphics changes so the foliage switch immediately hides or restores its vegetation layers.
+- `UUEGT1RegionSettings` exposes the seed, grid extent, transition distances, shoreline, sea level, and mountain height as project configuration. It is the correct place to tune the broad region without rewriting generators.
+- `UEGT1WorldLayout::SampleRegion` is a pure coordinate sampler. It returns normalized town/meadow/farmland/highland/tropical/coast/ocean weights plus continuous elevation, water depth, temperature, and moisture. No presentation or Actor state is involved.
+- `AUEGT1WorldDirector` validates world composition at startup, reports tile/instance/biome coverage, and recreates missing regional, town, or gameplay actors deterministically.
+- `AUEGT1Town` owns the central plaza, route-safe building grammar, street furniture, pier, and lighthouse. Buildings and details are HISM instances, not individual Actors.
+- `AUEGT1BiomeTile` turns sampler output into faceted sloped terrain, paths, conifers, broadleaf canopy, rocks, grass, crop rows, water/wave planes, and mountain silhouettes. It listens for graphics changes so the foliage switch immediately hides or restores vegetation and crop layers.
 - `AUEGT1HUD` is deliberately code-driven for this foundation. A later CommonUI/UMG layer can replace presentation without changing gameplay state.
 
 ## World and visual contract
 
-The current world is a five-by-five grid of 3,200 cm tiles (a roughly 160 m square playable grove). Three reserved trail corridors connect the central sanctuary to distinct Waystones. The deterministic seed is `7319`; authored and fallback layouts use the same constants.
+The world is an eleven-by-eleven grid of 3,200 cm tiles: a roughly 352 m square foundation. Unreal X is east/west and Y is north/south. The small town occupies the center; coast and ocean grow toward +X, farms toward -X, mountains toward +Y, and tropical vegetation toward -Y. Transition weights overlap across several tiles, including mixed northeast cliff coast and southeast tropical coast, so directions are regions rather than separate test maps.
 
-The visual language uses chunky primitive silhouettes, deep forest/moss/fern greens, warm amber inactive signals, bright teal restored signals, pale stone, and warm directional light. Motion is systemic—floating shards, rotating sanctuary slabs, light pulses, head bob, and FOV interpolation—so the slice has life without character-animation dependencies.
+Three reserved trail corridors still connect the central sanctuary to distinct Waystones. The deterministic seed is `7319`. Authored and fallback layouts, terrain height, route placement, runtime diagnostics, and automation all call the same sampler.
 
-The map is World Partition with 36 external actor packages. This is intentionally more infrastructure than the current footprint needs: future tiles, encounters, and landmarks can become spatially streamed content without replacing the map format or creating a source-control bottleneck.
+The visual language deliberately treats low-poly geometry like physical miniatures in believable light: chunky readable silhouettes, faceted slopes, warm plaster and teal roofs, deep climatic greens, ochre crops, pale coastal sand, teal water, warm amber signals, and photographic-scale sun/sky/fog/cloud lighting. The shared palette keeps the mixed treatment coherent.
+
+The map is World Partition with 134 external actor packages and existing HLOD layer assets. This is intentionally more infrastructure than the current footprint needs: future districts, tiles, authored set dressing, and landmarks can become spatially streamed content without replacing the map format or creating a source-control bottleneck.
 
 ## Performance contract
 
 - Target: 1920×1080, 60 fps on an RTX 3060-class GPU.
 - Default quality: level 2 for view distance, shadows, Lumen GI/reflections, post, effects, foliage, and shading; level 3 textures.
 - The recommended persistent profile is borderless 1920×1080 at 60 fps, VSync on, 100% resolution scale, and all optional effects enabled. Explicit feature switches override the related scalability result without changing unrelated groups.
-- Current authored biome: 1,350 instanced primitives across 25 tile actors.
+- Current authored foundation: about 10,000 instanced primitives across 121 regional tiles plus roughly 100 town instances.
 - HISM culling is configured per prop layer; only ground and major rocks/trunks participate in collision.
 - Interaction traces run at 20 Hz rather than every render frame.
 - Dynamic lights do not cast shadows. Repeated ambient motion changes component transforms, not skeletal animation graphs.
@@ -51,14 +61,16 @@ Measure before increasing instance density, light radius/count, shadowed movable
 
 1. Put cross-system state in a dedicated state object or subsystem; do not make presentation the authority.
 2. Add interactables through `IUEGT1Interactable` and keep the trace component generic.
-3. Add deterministic layout data to `UEGT1WorldLayout` or a future data asset. Keep the content generator and runtime fallback aligned.
+3. Put broad numeric tuning in `UUEGT1RegionSettings`; add new deterministic sampling behavior to `UEGT1WorldLayout`. Never fork editor and runtime generation constants.
 4. Prefer HISM/ISM, PCG, or pooled actors for repeated environment content. Use individual Actors for gameplay identity.
 5. Preserve the `LogUEGT1` signals used by smoke automation, or update the assertions in the same change.
 6. Run `Build.ps1`, `Test.ps1`, and `Smoke-Gameplay.ps1` after C++/content changes. Run the packaged rendered smoke before a playtest handoff.
 
 ## Diagnostics and automation
 
-- `F3` toggles frame rate, world position, and focused interactable in-game.
+- `F3` toggles frame rate, position, dominant biome, sampled ground/water height, temperature, moisture, and focused interactable in-game.
 - `uegt1.Debug.DrawInteraction 1` draws interaction traces.
 - `Scripts/Smoke-Gameplay.ps1` verifies the authored World Partition load and expected content headlessly.
-- `Scripts/Smoke-PackagedBuild.ps1` performs two rendered Development-package runs: it completes the objective and captures the world, then renders the graphics menu, restores and verifies persistent recommendations, and exits through the menu quit path. The `-UEGT1Smoke*` arguments exist only for deterministic verification.
+- `Scripts/Smoke-PackagedBuild.ps1` verifies the objective/menu flows and renders five additional deterministic regional views: town, east waterfront, west farms, north highlands, and south tropics. The `-UEGT1Smoke*` and `-UEGT1RegionCaptureFolder` arguments exist only for automation.
+
+See `Docs/Region-Authoring.md` before changing regional direction, scale, biome composition, terrain sampling, or authoring automation.

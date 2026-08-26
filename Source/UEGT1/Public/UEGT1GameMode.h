@@ -18,13 +18,18 @@ public:
 private:
 	void CaptureAutomatedSmokeFrame();
 	void CaptureAutomatedMenuFrame();
+	void PositionAutomatedRegionView();
+	void CaptureAutomatedRegionFrame();
 	void FinishAutomatedSmokeRun();
 	void FinishAutomatedMenuSmokeRun();
 
 	FString AutomatedCapturePath;
 	FString AutomatedMenuCapturePath;
+	FString AutomatedRegionCaptureFolder;
+	int32 AutomatedRegionCaptureIndex = 0;
 	FTimerHandle CaptureTimerHandle;
 	FTimerHandle MenuCaptureTimerHandle;
+	FTimerHandle RegionCaptureTimerHandle;
 	FTimerHandle ExitTimerHandle;
 
 	UPROPERTY(Transient)

@@ -2,6 +2,7 @@
 
 #include "Engine/Level.h"
 #include "Engine/World.h"
+#include "World/UEGT1WorldLayout.h"
 
 bool UUEGT1EditorAuthoringLibrary::ConvertLevelActorsToExternalPackages(UObject* WorldContextObject)
 {
@@ -17,4 +18,34 @@ bool UUEGT1EditorAuthoringLibrary::ConvertLevelActorsToExternalPackages(UObject*
 #else
 	return false;
 #endif
+}
+
+int32 UUEGT1EditorAuthoringLibrary::GetRegionWorldSeed()
+{
+	return UEGT1WorldLayout::GetWorldSeed();
+}
+
+int32 UUEGT1EditorAuthoringLibrary::GetRegionTileRadius()
+{
+	return UEGT1WorldLayout::GetTileRadius();
+}
+
+float UUEGT1EditorAuthoringLibrary::GetRegionTileSize()
+{
+	return UEGT1WorldLayout::GetTileSize();
+}
+
+TArray<FVector> UUEGT1EditorAuthoringLibrary::GetRegionWaystoneLocations()
+{
+	return UEGT1WorldLayout::GetWaystoneLocations();
+}
+
+TArray<FName> UUEGT1EditorAuthoringLibrary::GetRegionWaystoneIds()
+{
+	return UEGT1WorldLayout::GetWaystoneIds();
+}
+
+float UUEGT1EditorAuthoringLibrary::GetRegionSurfaceHeight(FVector WorldPosition)
+{
+	return UEGT1WorldLayout::SampleRegion(WorldPosition).SurfaceHeight;
 }

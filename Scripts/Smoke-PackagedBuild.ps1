@@ -28,7 +28,17 @@ $runtimeLog = Join-Path $logFolder 'SignalGrove-PackagedSmoke.log'
 $screenshot = Join-Path $screenshotFolder 'SignalGrove-PackagedSmoke.png'
 $menuLog = Join-Path $logFolder 'SignalGrove-MenuSmoke.log'
 $menuScreenshot = Join-Path $screenshotFolder 'SignalGrove-MenuSmoke.png'
-foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot)) {
+$regionLog = Join-Path $logFolder 'SignalGrove-RegionSmoke.log'
+$regionScreenshotFolder = Join-Path $screenshotFolder 'Region'
+$regionScreenshots = @(
+    (Join-Path $regionScreenshotFolder '01-CenterTown.png'),
+    (Join-Path $regionScreenshotFolder '02-EastWaterfront.png'),
+    (Join-Path $regionScreenshotFolder '03-WestFarmland.png'),
+    (Join-Path $regionScreenshotFolder '04-NorthHighlands.png'),
+    (Join-Path $regionScreenshotFolder '05-SouthTropics.png')
+)
+New-Item -ItemType Directory -Path $regionScreenshotFolder -Force | Out-Null
+foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot, $regionLog) + $regionScreenshots) {
     if (Test-Path -LiteralPath $oldArtifact) {
         Remove-Item -LiteralPath $oldArtifact -Force
     }
@@ -66,8 +76,9 @@ $logText = Get-Content -LiteralPath $runtimeLog -Raw
 $requiredSignals = @(
     'Runtime PlayerStart ready:',
     'Automated smoke restored recommended settings before capture.',
-    'Automated view: Location=V(Y=-1300.00',
-    'Signal Grove ready: Seed=7319 Tiles=25 Instances=1350 Waystones=3',
+    'Automated view: Location=V(Y=-1350.00',
+    'Regional foundation ready: Seed=7319 Tiles=121 Expected=121',
+    'Town foundation ready: Buildings=',
     'Waystone activated: Id=EastRise',
     'Waystone activated: Id=WestHollow',
     'Waystone activated: Id=SouthWatch',
@@ -82,11 +93,14 @@ foreach ($signal in $requiredSignals) {
 if ($logText.Contains('No authored biome tiles found')) {
     throw 'Packaged smoke used the runtime biome fallback instead of authored content.'
 }
+if ($logText.Contains('No authored town found') -or $logText.Contains('Regional tile coverage mismatch')) {
+    throw 'Packaged smoke did not load the complete authored regional foundation.'
+}
 if ($logText.Contains("Couldn't spawn Pawn")) {
     throw 'Packaged smoke failed to spawn the first-person player pawn.'
 }
 
-Write-Host 'Packaged gameplay smoke passed: DX12 world load, objective completion, and rendered frame verified.'
+Write-Host 'Packaged gameplay smoke passed: DX12 regional world load, objective completion, and rendered town frame verified.'
 Write-Host "Runtime log: $runtimeLog"
 Write-Host "Screenshot: $screenshot"
 
@@ -167,3 +181,47 @@ Write-Host 'Packaged menu smoke passed: settings screen rendered, recommendation
 Write-Host "Menu log: $menuLog"
 Write-Host "Menu screenshot: $menuScreenshot"
 Write-Host "Persisted settings: $($settingsFile.FullName)"
+
+$regionArguments = @(
+    '-RenderOffscreen',
+    '-Windowed',
+    '-ResX=1920',
+    '-ResY=1080',
+    '-unattended',
+    '-nosplash',
+    '-UEGT1SmokeResetSettings',
+    "-UEGT1RegionCaptureFolder=$regionScreenshotFolder",
+    "-abslog=$regionLog"
+)
+Write-Host 'Running five-view rendered regional smoke'
+$regionProcess = Start-Process -FilePath $Executable -ArgumentList $regionArguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Hidden -PassThru
+if (-not $regionProcess.WaitForExit($TimeoutSeconds * 1000)) {
+    Stop-Process -Id $regionProcess.Id -Force
+    throw "Packaged regional capture did not finish within $TimeoutSeconds seconds."
+}
+if ($regionProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $regionLog -PathType Leaf)) {
+    throw "Packaged regional capture failed with exit code $($regionProcess.ExitCode). Inspect $regionLog."
+}
+foreach ($regionScreenshot in $regionScreenshots) {
+    if (-not (Test-Path -LiteralPath $regionScreenshot -PathType Leaf)) {
+        throw "Packaged regional capture did not create $regionScreenshot."
+    }
+}
+$regionLogText = Get-Content -LiteralPath $regionLog -Raw
+foreach ($view in @('CenterTown', 'EastWaterfront', 'WestFarmland', 'NorthHighlands', 'SouthTropics')) {
+    if (-not $regionLogText.Contains("Automated regional screenshot requested: View=$view")) {
+        throw "Packaged regional capture is missing the $view view."
+    }
+}
+foreach ($biomeSignal in @('Dominant=Town', 'Dominant=Coast', 'Dominant=Farmland', 'Dominant=Highlands', 'Dominant=Tropical')) {
+    if (-not $regionLogText.Contains($biomeSignal)) {
+        throw "Packaged regional capture is missing expected sampler signal: $biomeSignal"
+    }
+}
+if (-not $regionLogText.Contains('Regional foundation ready: Seed=7319 Tiles=121 Expected=121') -or
+    $regionLogText.Contains('Regional tile coverage mismatch')) {
+    throw 'Packaged regional capture did not load the complete configured tile grid.'
+}
+Write-Host 'Packaged regional smoke passed: town, waterfront, farmland, highlands, and tropics rendered from deterministic viewpoints.'
+Write-Host "Regional log: $regionLog"
+Write-Host "Regional screenshots: $regionScreenshotFolder"

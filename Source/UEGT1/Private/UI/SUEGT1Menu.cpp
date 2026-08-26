@@ -196,7 +196,7 @@ TSharedRef<SWidget> SUEGT1Menu::BuildHomePage()
 			+ SVerticalBox::Slot().AutoHeight()
 			[
 				SNew(STextBlock)
-				.Text(NSLOCTEXT("UEGT1", "MenuVersion", "V0.2  •  SETTINGS MILESTONE"))
+				.Text(NSLOCTEXT("UEGT1", "MenuVersion", "V0.3  •  REGIONAL FOUNDATION"))
 				.Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
 				.ColorAndOpacity(FLinearColor(0.25f, 0.48f, 0.41f, 1.0f))
 			]

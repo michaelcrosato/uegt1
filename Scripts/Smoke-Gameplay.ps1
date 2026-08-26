@@ -25,7 +25,8 @@ $logText = Get-Content -LiteralPath $runtimeLog -Raw
 $requiredSignals = @(
     'Game Engine Initialized.',
     'LoadMap: /Game/Maps/Main',
-    'Signal Grove ready: Seed=7319 Tiles=25 Instances=1350 Waystones=3',
+    'Regional foundation ready: Seed=7319 Tiles=121 Expected=121',
+    'Town foundation ready: Buildings=',
     'Waystone registered: Id=EastRise',
     'Waystone registered: Id=WestHollow',
     'Waystone registered: Id=SouthWatch'
@@ -38,6 +39,9 @@ foreach ($signal in $requiredSignals) {
 if ($logText.Contains('No authored biome tiles found')) {
     throw 'Gameplay smoke used the runtime biome fallback instead of the authored World Partition content.'
 }
+if ($logText.Contains('No authored town found') -or $logText.Contains('Regional tile coverage mismatch')) {
+    throw 'Gameplay smoke did not load the complete authored town and regional tile coverage.'
+}
 
-Write-Host "Gameplay smoke passed: authored 25-tile World Partition and all three Waystones loaded."
+Write-Host "Gameplay smoke passed: authored 121-tile regional World Partition, town, and all three Waystones loaded."
 Write-Host "Runtime log: $runtimeLog"

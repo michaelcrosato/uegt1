@@ -21,6 +21,25 @@
 #include "World/UEGT1WorldLayout.h"
 #include "World/UEGT1BiomeTile.h"
 
+namespace
+{
+	struct FUEGT1RegionCaptureView
+	{
+		const TCHAR* Name;
+		FVector Position;
+		FRotator Rotation;
+		float HeightAboveSurface;
+	};
+
+	const FUEGT1RegionCaptureView RegionCaptureViews[] = {
+		{ TEXT("CenterTown"), FVector(0.0f, -1150.0f, 0.0f), FRotator(-4.0f, 90.0f, 0.0f), 115.0f },
+		{ TEXT("EastWaterfront"), FVector(6000.0f, 900.0f, 0.0f), FRotator(2.0f, -45.0f, 0.0f), 350.0f },
+		{ TEXT("WestFarmland"), FVector(-8500.0f, -2500.0f, 0.0f), FRotator(-5.0f, 180.0f, 0.0f), 300.0f },
+		{ TEXT("NorthHighlands"), FVector(0.0f, 8500.0f, 0.0f), FRotator(4.0f, 90.0f, 0.0f), 1100.0f },
+		{ TEXT("SouthTropics"), FVector(0.0f, -8500.0f, 0.0f), FRotator(-4.0f, -90.0f, 0.0f), 250.0f }
+	};
+}
+
 AUEGT1GameMode::AUEGT1GameMode()
 {
 	DefaultPawnClass = AUEGT1ExplorerCharacter::StaticClass();
@@ -35,7 +54,7 @@ void AUEGT1GameMode::InitGame(const FString& MapName, const FString& Options, FS
 
 	// World Partition can initialize the first streaming source before a spatial PlayerStart is present.
 	// Keep login deterministic by supplying a lightweight, runtime-only start at the authored location.
-	const FTransform StartTransform(FRotator(0.0f, 90.0f, 0.0f), UEGT1WorldLayout::PlayerStartLocation);
+	const FTransform StartTransform(FRotator(0.0f, 90.0f, 0.0f), UEGT1WorldLayout::GetPlayerStartLocation());
 	RuntimePlayerStart = GetWorld()->SpawnActor<APlayerStart>(APlayerStart::StaticClass(), StartTransform.GetLocation(), StartTransform.Rotator());
 	UE_LOG(LogUEGT1, Display, TEXT("Runtime PlayerStart ready: Location=%s Rotation=%s"),
 		*StartTransform.GetLocation().ToCompactString(), *StartTransform.Rotator().ToCompactString());
@@ -84,6 +103,14 @@ void AUEGT1GameMode::StartPlay()
 		AutomatedMenuCapturePath = FPaths::ConvertRelativePathToFull(AutomatedMenuCapturePath);
 		GetWorldTimerManager().SetTimer(MenuCaptureTimerHandle, this, &AUEGT1GameMode::CaptureAutomatedMenuFrame, 4.0f, false);
 		UE_LOG(LogUEGT1, Display, TEXT("Automated menu capture scheduled: %s"), *AutomatedMenuCapturePath);
+	}
+	if (FParse::Value(FCommandLine::Get(), TEXT("UEGT1RegionCaptureFolder="), AutomatedRegionCaptureFolder))
+	{
+		AutomatedRegionCaptureFolder = FPaths::ConvertRelativePathToFull(AutomatedRegionCaptureFolder);
+		IFileManager::Get().MakeDirectory(*AutomatedRegionCaptureFolder, true);
+		AutomatedRegionCaptureIndex = 0;
+		GetWorldTimerManager().SetTimer(RegionCaptureTimerHandle, this, &AUEGT1GameMode::PositionAutomatedRegionView, 4.0f, false);
+		UE_LOG(LogUEGT1, Display, TEXT("Automated regional capture sequence scheduled: %s"), *AutomatedRegionCaptureFolder);
 	}
 }
 
@@ -146,6 +173,47 @@ void AUEGT1GameMode::CaptureAutomatedMenuFrame()
 	FScreenshotRequest::RequestScreenshot(AutomatedMenuCapturePath, true, false);
 	UE_LOG(LogUEGT1, Display, TEXT("Automated graphics menu screenshot requested: %s"), *AutomatedMenuCapturePath);
 	GetWorldTimerManager().SetTimer(ExitTimerHandle, this, &AUEGT1GameMode::FinishAutomatedMenuSmokeRun, 3.0f, false);
+}
+
+void AUEGT1GameMode::PositionAutomatedRegionView()
+{
+	if (AutomatedRegionCaptureIndex >= static_cast<int32>(UE_ARRAY_COUNT(RegionCaptureViews)))
+	{
+		FinishAutomatedSmokeRun();
+		return;
+	}
+	const FUEGT1RegionCaptureView& View = RegionCaptureViews[AutomatedRegionCaptureIndex];
+	const FUEGT1RegionSample Sample = UEGT1WorldLayout::SampleRegion(View.Position);
+	if (APlayerController* PlayerController = GetWorld()->GetFirstPlayerController())
+	{
+		if (APawn* Pawn = PlayerController->GetPawn())
+		{
+			FVector PawnPosition = View.Position;
+			PawnPosition.Z = Sample.SurfaceHeight + View.HeightAboveSurface;
+			Pawn->SetActorLocation(PawnPosition, false, nullptr, ETeleportType::TeleportPhysics);
+		}
+		PlayerController->SetControlRotation(View.Rotation);
+	}
+	UE_LOG(LogUEGT1, Display, TEXT("Automated regional view positioned: View=%s Dominant=%s Surface=%.0f Water=%.0f Blend=%s"),
+		View.Name, LexToString(Sample.GetDominantBiome()), Sample.SurfaceHeight, Sample.WaterDepth, *Sample.Biomes.ToCompactString());
+	GetWorldTimerManager().SetTimer(RegionCaptureTimerHandle, this, &AUEGT1GameMode::CaptureAutomatedRegionFrame, 0.75f, false);
+}
+
+void AUEGT1GameMode::CaptureAutomatedRegionFrame()
+{
+	const FUEGT1RegionCaptureView& View = RegionCaptureViews[AutomatedRegionCaptureIndex];
+	const FString CapturePath = FPaths::Combine(AutomatedRegionCaptureFolder, FString::Printf(TEXT("%02d-%s.png"), AutomatedRegionCaptureIndex + 1, View.Name));
+	FScreenshotRequest::RequestScreenshot(CapturePath, false, false);
+	UE_LOG(LogUEGT1, Display, TEXT("Automated regional screenshot requested: View=%s Path=%s"), View.Name, *CapturePath);
+	++AutomatedRegionCaptureIndex;
+	if (AutomatedRegionCaptureIndex < UE_ARRAY_COUNT(RegionCaptureViews))
+	{
+		GetWorldTimerManager().SetTimer(RegionCaptureTimerHandle, this, &AUEGT1GameMode::PositionAutomatedRegionView, 1.25f, false);
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(ExitTimerHandle, this, &AUEGT1GameMode::FinishAutomatedSmokeRun, 2.0f, false);
+	}
 }
 
 void AUEGT1GameMode::FinishAutomatedMenuSmokeRun()

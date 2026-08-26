@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "World/UEGT1RegionTypes.h"
 #include "UEGT1BiomeTile.generated.h"
 
 class UHierarchicalInstancedStaticMeshComponent;
@@ -27,6 +28,9 @@ public:
 	FIntPoint GetTileCoordinate() const { return TileCoordinate; }
 
 	UFUNCTION(BlueprintPure, Category = "UEGT1|World")
+	EUEGT1RegionBiome GetDominantBiome() const { return DominantBiome; }
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|World")
 	int32 GetGeneratedInstanceCount() const;
 
 	UPROPERTY(EditInstanceOnly, Category = "UEGT1|World")
@@ -37,6 +41,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|World", meta = (ClampMin = "800.0"))
 	float TileSize = 3200.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|World", meta = (ClampMin = "3", ClampMax = "12"))
+	int32 TerrainCellsPerAxis = 6;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|World", meta = (ClampMin = "0"))
 	int32 TreesPerTile = 14;
@@ -49,35 +56,29 @@ public:
 
 private:
 	void RebuildTile();
-	void GenerateGroundAndTrails(FRandomStream& Random);
+	void GenerateTerrain(FRandomStream& Random);
+	void GenerateRoutes(FRandomStream& Random);
 	void GenerateVegetation(FRandomStream& Random);
-	void GenerateBoundaryCliffs(FRandomStream& Random);
+	void GenerateRegionalFeatures(FRandomStream& Random);
 	void ApplyGraphicsSettings();
+	FLinearColor GetBlendedGroundColor(const FUEGT1BiomeWeights& Weights) const;
 	UHierarchicalInstancedStaticMeshComponent* CreateInstanceComponent(const FName Name, UStaticMesh* Mesh, bool bCollision);
 	void AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color);
 	bool IsInsideTile(const FVector& WorldPosition, float Padding = 0.0f) const;
 
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<USceneComponent> SceneRoot;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SceneRoot;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> GroundInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> TrailInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> TrunkInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> ConiferInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> BroadleafInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> RockInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> GrassInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> CropInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> WaterInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> WaveInstances;
+	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> PeakInstances;
 
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> GroundInstances;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> TrailInstances;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> TrunkInstances;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> CanopyInstances;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> RockInstances;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> GrassInstances;
-
-	UPROPERTY()
-	TObjectPtr<UMaterialInterface> ShapeMaterial;
+	UPROPERTY() TObjectPtr<UMaterialInterface> ShapeMaterial;
+	EUEGT1RegionBiome DominantBiome = EUEGT1RegionBiome::Meadow;
 };

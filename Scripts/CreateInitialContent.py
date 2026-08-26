@@ -2,14 +2,6 @@ import unreal
 
 
 MAP_PATH = "/Game/Maps/Main"
-WORLD_SEED = 7319
-TILE_RADIUS = 2
-TILE_SIZE = 3200.0
-WAYSTONES = (
-    ("EastRise", unreal.Vector(5200.0, 3900.0, 0.0)),
-    ("WestHollow", unreal.Vector(-6100.0, 2800.0, 0.0)),
-    ("SouthWatch", unreal.Vector(900.0, -7000.0, 0.0)),
-)
 
 
 def load_project_class(class_name):
@@ -46,6 +38,7 @@ def configure_lighting(actor_subsystem):
     sky_component.set_editor_property("real_time_capture", True)
 
     make_always_loaded(spawn_actor(actor_subsystem, unreal.SkyAtmosphere, unreal.Vector(0.0, 0.0, 0.0), "Signal Grove Atmosphere"))
+    make_always_loaded(spawn_actor(actor_subsystem, unreal.VolumetricCloud, unreal.Vector(0.0, 0.0, 0.0), "Signal Grove Cloud Layer"))
 
     fog = make_always_loaded(spawn_actor(actor_subsystem, unreal.ExponentialHeightFog, unreal.Vector(0.0, 0.0, -80.0), "Signal Grove Mist"))
     fog_component = fog.get_component_by_class(unreal.ExponentialHeightFogComponent)
@@ -57,29 +50,39 @@ def configure_lighting(actor_subsystem):
     settings = post_process.get_editor_property("settings")
     settings.set_editor_property("override_auto_exposure_min_brightness", True)
     settings.set_editor_property("override_auto_exposure_max_brightness", True)
-    settings.set_editor_property("auto_exposure_min_brightness", 11.5)
-    settings.set_editor_property("auto_exposure_max_brightness", 11.5)
+    settings.set_editor_property("auto_exposure_min_brightness", 12.8)
+    settings.set_editor_property("auto_exposure_max_brightness", 12.8)
     post_process.set_editor_property("settings", settings)
 
 
 def create_gameplay_actors(actor_subsystem):
     world_director_class = load_project_class("UEGT1WorldDirector")
     biome_tile_class = load_project_class("UEGT1BiomeTile")
+    town_class = load_project_class("UEGT1Town")
     sanctuary_class = load_project_class("UEGT1Sanctuary")
     waystone_class = load_project_class("UEGT1Waystone")
 
     make_always_loaded(spawn_actor(actor_subsystem, world_director_class, unreal.Vector(0.0, 0.0, 0.0), "Signal Grove World Director"))
+    spawn_actor(actor_subsystem, town_class, unreal.Vector(0.0, 0.0, 0.0), "Signal Grove Town")
     spawn_actor(actor_subsystem, sanctuary_class, unreal.Vector(0.0, 0.0, 0.0), "Signal Grove Sanctuary")
 
-    for waystone_id, location in WAYSTONES:
+    waystone_ids = unreal.UEGT1EditorAuthoringLibrary.get_region_waystone_ids()
+    waystone_locations = unreal.UEGT1EditorAuthoringLibrary.get_region_waystone_locations()
+    for waystone_id, location in zip(waystone_ids, waystone_locations):
+        location.z = unreal.UEGT1EditorAuthoringLibrary.get_region_surface_height(location)
         waystone = spawn_actor(actor_subsystem, waystone_class, location, f"Waystone {waystone_id}")
         waystone.initialize_waystone(waystone_id)
 
-    for tile_y in range(-TILE_RADIUS, TILE_RADIUS + 1):
-        for tile_x in range(-TILE_RADIUS, TILE_RADIUS + 1):
-            location = unreal.Vector(tile_x * TILE_SIZE, tile_y * TILE_SIZE, 0.0)
+    world_seed = unreal.UEGT1EditorAuthoringLibrary.get_region_world_seed()
+    tile_radius = unreal.UEGT1EditorAuthoringLibrary.get_region_tile_radius()
+    tile_size = unreal.UEGT1EditorAuthoringLibrary.get_region_tile_size()
+    for tile_y in range(-tile_radius, tile_radius + 1):
+        for tile_x in range(-tile_radius, tile_radius + 1):
+            location = unreal.Vector(tile_x * tile_size, tile_y * tile_size, 0.0)
             tile = spawn_actor(actor_subsystem, biome_tile_class, location, f"Biome Tile {tile_x:+d} {tile_y:+d}")
-            tile.initialize_tile(unreal.IntPoint(tile_x, tile_y), WORLD_SEED)
+            tile.initialize_tile(unreal.IntPoint(tile_x, tile_y), world_seed)
+
+    return tile_radius
 
 
 def main():
@@ -97,10 +100,10 @@ def main():
     elif not level_subsystem.new_level(MAP_PATH):
         raise RuntimeError(f"Unable to create {MAP_PATH}")
 
-    create_gameplay_actors(actor_subsystem)
+    tile_radius = create_gameplay_actors(actor_subsystem)
     configure_lighting(actor_subsystem)
 
-    player_start = spawn_actor(actor_subsystem, unreal.PlayerStart, unreal.Vector(0.0, -1300.0, 100.0), "Signal Grove Player Start")
+    player_start = spawn_actor(actor_subsystem, unreal.PlayerStart, unreal.Vector(0.0, -1350.0, 110.0), "Signal Grove Player Start")
     player_start.set_actor_rotation(unreal.Rotator(roll=0.0, pitch=0.0, yaw=90.0), False)
     make_always_loaded(player_start)
 
@@ -116,7 +119,7 @@ def main():
         raise RuntimeError(f"Unable to save {MAP_PATH}")
 
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
-    unreal.log(f"UEGT1 Signal Grove authored at {MAP_PATH} with {(TILE_RADIUS * 2 + 1) ** 2} biome tiles")
+    unreal.log(f"UEGT1 regional foundation authored at {MAP_PATH} with {(tile_radius * 2 + 1) ** 2} biome tiles")
     unreal.log("UEGT1_CONTENT_GENERATION_SUCCEEDED")
 
 

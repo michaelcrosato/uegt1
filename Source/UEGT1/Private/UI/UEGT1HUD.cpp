@@ -7,6 +7,7 @@
 #include "Player/UEGT1ExplorerCharacter.h"
 #include "Player/UEGT1PlayerController.h"
 #include "World/UEGT1Palette.h"
+#include "World/UEGT1WorldLayout.h"
 
 void AUEGT1HUD::DrawHUD()
 {
@@ -99,12 +100,17 @@ void AUEGT1HUD::DrawDiagnostics(float ScreenWidth, float ScreenHeight)
 	const UUEGT1InteractionComponent* Interaction = Character ? Character->GetInteractionComponent() : nullptr;
 	const float Fps = GetWorld()->GetDeltaSeconds() > SMALL_NUMBER ? 1.0f / GetWorld()->GetDeltaSeconds() : 0.0f;
 	const FVector Position = Pawn ? Pawn->GetActorLocation() : FVector::ZeroVector;
+	const FUEGT1RegionSample Region = UEGT1WorldLayout::SampleRegion(Position);
 	const FString Focus = Interaction && Interaction->GetFocusedActor() ? Interaction->GetFocusedActor()->GetName() : TEXT("None");
 
-	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.80f), ScreenWidth - 355.0f, 28.0f, 325.0f, 125.0f);
-	DrawText(TEXT("UEGT1 DIAGNOSTICS"), UEGT1Palette::Signal, ScreenWidth - 337.0f, 42.0f, GEngine->GetSmallFont(), 0.9f, false);
-	DrawText(FString::Printf(TEXT("FPS %.0f   Seed 7319"), Fps), UEGT1Palette::Paper, ScreenWidth - 337.0f, 68.0f, GEngine->GetSmallFont(), 0.85f, false);
-	DrawText(FString::Printf(TEXT("XYZ %.0f  %.0f  %.0f"), Position.X, Position.Y, Position.Z), UEGT1Palette::Paper, ScreenWidth - 337.0f, 91.0f, GEngine->GetSmallFont(), 0.85f, false);
-	DrawText(FString::Printf(TEXT("Focus %s"), *Focus), UEGT1Palette::Paper, ScreenWidth - 337.0f, 114.0f, GEngine->GetSmallFont(), 0.85f, false);
-	DrawText(TEXT("Trace: uegt1.Debug.DrawInteraction 1"), FLinearColor(0.65f, 0.72f, 0.67f, 1.0f), ScreenWidth - 337.0f, 137.0f, GEngine->GetSmallFont(), 0.72f, false);
+	DrawRect(FLinearColor(0.0f, 0.0f, 0.0f, 0.80f), ScreenWidth - 415.0f, 28.0f, 385.0f, 178.0f);
+	DrawText(TEXT("UEGT1 REGION DIAGNOSTICS"), UEGT1Palette::Signal, ScreenWidth - 397.0f, 42.0f, GEngine->GetSmallFont(), 0.9f, false);
+	DrawText(FString::Printf(TEXT("FPS %.0f   Seed %d"), Fps, UEGT1WorldLayout::GetWorldSeed()), UEGT1Palette::Paper, ScreenWidth - 397.0f, 68.0f, GEngine->GetSmallFont(), 0.85f, false);
+	DrawText(FString::Printf(TEXT("XYZ %.0f  %.0f  %.0f"), Position.X, Position.Y, Position.Z), UEGT1Palette::Paper, ScreenWidth - 397.0f, 91.0f, GEngine->GetSmallFont(), 0.85f, false);
+	DrawText(FString::Printf(TEXT("Region %s   Ground %.0f   Water %.0f"), LexToString(Region.GetDominantBiome()), Region.SurfaceHeight, Region.WaterDepth),
+		UEGT1Palette::Paper, ScreenWidth - 397.0f, 114.0f, GEngine->GetSmallFont(), 0.82f, false);
+	DrawText(FString::Printf(TEXT("Temp %.2f   Moisture %.2f"), Region.Temperature, Region.Moisture),
+		UEGT1Palette::Paper, ScreenWidth - 397.0f, 137.0f, GEngine->GetSmallFont(), 0.82f, false);
+	DrawText(FString::Printf(TEXT("Focus %s"), *Focus), UEGT1Palette::Paper, ScreenWidth - 397.0f, 160.0f, GEngine->GetSmallFont(), 0.82f, false);
+	DrawText(TEXT("Trace: uegt1.Debug.DrawInteraction 1"), FLinearColor(0.65f, 0.72f, 0.67f, 1.0f), ScreenWidth - 397.0f, 183.0f, GEngine->GetSmallFont(), 0.72f, false);
 }

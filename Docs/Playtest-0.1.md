@@ -1,8 +1,8 @@
-# Signal Grove v0.2 playtest
+# Signal Grove v0.3 playtest
 
 ## Goal
 
-Walk the three branching paths, stabilize each amber Waystone, and return the signal to the central sanctuary. A successful run ends when the sanctuary core turns teal and the completion message appears. Expected first-run time is about 5–10 minutes.
+Explore the sanctuary town and its four outward regions, then walk the three marked paths, stabilize each amber Waystone, and return the signal to the central sanctuary. A successful run ends when the sanctuary core turns teal and the completion message appears. Expected first-run time is about 10–15 minutes if the regional vistas are sampled.
 
 ## Launch
 
@@ -41,11 +41,21 @@ Open **Graphics & Display** from either the launch menu or pause menu. Display c
 7. Open the menu, disable a few individual effects, apply, and confirm the world changes. Relaunch to verify the saved values return; then use **Restore Recommended** and apply it.
 8. Use **Quit to Desktop** and confirm the standalone build exits cleanly without Alt+F4.
 
-## Known v0.2 limits
+## Regional exploration checks
+
+1. **Center — town:** the sanctuary sits in an open paved plaza, surrounded by a readable ring of small buildings and street lamps. The main roads remain unobstructed. Look east for the pier and lighthouse.
+2. **East — waterfront:** meadow gives way to sand and descending shoreline before a broad teal ocean surface. The pier carries the town silhouette into the water; northeast terrain should read as higher rocky coast rather than a hard biome seam.
+3. **West — countryside:** vegetation thins into rolling ochre/green fields with repeated crop rows. Farm and meadow colors should interleave through the transition instead of changing on one tile boundary.
+4. **North — mountains:** ground elevation rises continuously into darker rocky terrain, conifers, and large faceted peaks. The town should remain visible below from the first slopes.
+5. **South — tropics:** canopy becomes broader, taller, denser, and more saturated with heavier understory. Southeast should pick up coastal moisture and water colors naturally.
+6. Toggle `F3` while crossing each boundary. The dominant region, ground height, water depth, temperature, and moisture should change plausibly without discontinuities.
+
+## Known v0.3 limits
 
 - No save/load: objective progress resets when the session ends.
 - No audio, characters, combat, inventory, quests, input rebinding, map, or accessibility UI yet.
-- Environment geometry intentionally uses engine primitives and procedural instances; landmark art and terrain sculpting are foundation-quality.
+- Environment geometry intentionally uses engine primitives and procedural instances; building kits, crops, terrain dressing, and landmark art remain foundation-quality.
+- The ocean is currently a visual/lighting foundation without swimming, buoyancy, waves, or water gameplay. The pier provides a safe authored approach to it.
 - The HUD is Canvas-based. The menu supports mouse, keyboard, and gamepad navigation, but gameplay prompts are not input-device adaptive.
 - World Partition and HISM are established for scale, while the current playable footprint remains a compact vertical slice.
 

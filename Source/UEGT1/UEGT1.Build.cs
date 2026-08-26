@@ -11,6 +11,7 @@ public class UEGT1 : ModuleRules
 		{
 			"Core",
 			"CoreUObject",
+			"DeveloperSettings",
 			"Engine",
 			"InputCore",
 			"PhysicsCore"

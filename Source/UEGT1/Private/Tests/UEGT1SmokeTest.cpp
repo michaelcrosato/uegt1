@@ -16,6 +16,7 @@
 #include "UEGT1GameMode.h"
 #include "UI/UEGT1HUD.h"
 #include "World/UEGT1WorldLayout.h"
+#include "World/UEGT1RegionSettings.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FUEGT1ProjectConfigurationTest,
@@ -120,6 +121,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 bool FUEGT1WorldLayoutTest::RunTest(const FString& Parameters)
 {
+	const UUEGT1RegionSettings& RegionSettings = UUEGT1RegionSettings::Get();
+	TestEqual(TEXT("The configurable region uses an eleven-by-eleven tile foundation"), UEGT1WorldLayout::GetExpectedTileCount(), 121);
+	TestEqual(TEXT("The region settings drive the deterministic seed"), RegionSettings.WorldSeed, UEGT1WorldLayout::GetWorldSeed());
+	TestTrue(TEXT("The region spans more than 300 metres"), UEGT1WorldLayout::GetWorldHalfExtent() * 2.0f > 30000.0f);
+
 	const TArray<FName>& Ids = UEGT1WorldLayout::GetWaystoneIds();
 	const TArray<FVector>& Locations = UEGT1WorldLayout::GetWaystoneLocations();
 	TestEqual(TEXT("The milestone has three Waystones"), Ids.Num(), 3);
@@ -127,16 +133,32 @@ bool FUEGT1WorldLayoutTest::RunTest(const FString& Parameters)
 
 	TSet<FName> UniqueIds(Ids);
 	TestEqual(TEXT("Waystone IDs are unique"), UniqueIds.Num(), Ids.Num());
-	const float WorldHalfExtent = (UEGT1WorldLayout::TileRadius + 0.5f) * UEGT1WorldLayout::TileSize;
+	const float WorldHalfExtent = UEGT1WorldLayout::GetWorldHalfExtent();
 	for (int32 Index = 0; Index < Locations.Num(); ++Index)
 	{
 		TestTrue(*FString::Printf(TEXT("Waystone %s is inside the authored world"), *Ids[Index].ToString()),
 			FMath::Abs(Locations[Index].X) < WorldHalfExtent && FMath::Abs(Locations[Index].Y) < WorldHalfExtent);
 		TestTrue(*FString::Printf(TEXT("Waystone %s is meaningfully separated from the sanctuary"), *Ids[Index].ToString()),
-			FVector::Dist2D(Locations[Index], UEGT1WorldLayout::SanctuaryLocation) > 2500.0f);
+			FVector::Dist2D(Locations[Index], UEGT1WorldLayout::GetSanctuaryLocation()) > 2500.0f);
 		TestTrue(TEXT("The connecting trail remains reserved from biome clutter"),
 			UEGT1WorldLayout::IsReservedGameplaySpace(Locations[Index] * 0.5f, 0.0f));
 	}
+
+	const FUEGT1RegionSample Center = UEGT1WorldLayout::SampleRegion(FVector::ZeroVector);
+	const FUEGT1RegionSample East = UEGT1WorldLayout::SampleRegion(FVector(15000.0f, 0.0f, 0.0f));
+	const FUEGT1RegionSample West = UEGT1WorldLayout::SampleRegion(FVector(-15000.0f, 0.0f, 0.0f));
+	const FUEGT1RegionSample North = UEGT1WorldLayout::SampleRegion(FVector(0.0f, 15000.0f, 0.0f));
+	const FUEGT1RegionSample South = UEGT1WorldLayout::SampleRegion(FVector(0.0f, -15000.0f, 0.0f));
+	const FUEGT1RegionSample CoastTransition = UEGT1WorldLayout::SampleRegion(FVector(6000.0f, 0.0f, 0.0f));
+	TestEqual(TEXT("The center is town"), Center.GetDominantBiome(), EUEGT1RegionBiome::Town);
+	TestEqual(TEXT("The east opens into ocean"), East.GetDominantBiome(), EUEGT1RegionBiome::Ocean);
+	TestEqual(TEXT("The west becomes farmland"), West.GetDominantBiome(), EUEGT1RegionBiome::Farmland);
+	TestEqual(TEXT("The north becomes highlands"), North.GetDominantBiome(), EUEGT1RegionBiome::Highlands);
+	TestEqual(TEXT("The south becomes tropical"), South.GetDominantBiome(), EUEGT1RegionBiome::Tropical);
+	TestTrue(TEXT("The east transition blends coast and meadow instead of creating a hard seam"),
+		CoastTransition.Biomes.Coast > 0.2f && CoastTransition.Biomes.Meadow > 0.2f);
+	TestTrue(TEXT("The northern terrain rises into mountains"), North.SurfaceHeight > Center.SurfaceHeight + 1200.0f);
+	TestTrue(TEXT("The ocean floor sits beneath sea level"), East.SurfaceHeight < UEGT1WorldLayout::GetSeaLevel() - 200.0f && East.WaterDepth > 200.0f);
 	return !HasAnyErrors();
 }
 

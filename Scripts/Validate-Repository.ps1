@@ -16,10 +16,18 @@ $requiredFiles = @(
     'Content\Maps\Main.umap',
     'Docs\Architecture.md',
     'Docs\Playtest-0.1.md',
+    'Docs\Region-Authoring.md',
     'Source\UEGT1.Target.cs',
     'Source\UEGT1Editor.Target.cs',
     'Source\UEGT1\UEGT1.Build.cs',
     'Source\UEGT1\Public\Settings\UEGT1GameUserSettings.h',
+    'Source\UEGT1\Public\World\UEGT1RegionSettings.h',
+    'Source\UEGT1\Public\World\UEGT1RegionTypes.h',
+    'Source\UEGT1\Public\World\UEGT1Town.h',
+    'Source\UEGT1\Private\World\UEGT1RegionSettings.cpp',
+    'Source\UEGT1\Private\World\UEGT1RegionTypes.cpp',
+    'Source\UEGT1\Private\World\UEGT1Town.cpp',
+    'Source\UEGT1\Private\World\UEGT1WorldLayout.cpp',
     'Source\UEGT1\Private\Settings\UEGT1GameUserSettings.cpp',
     'Source\UEGT1\Private\UI\SUEGT1Menu.h',
     'Source\UEGT1\Private\UI\SUEGT1Menu.cpp',
@@ -76,14 +84,22 @@ if ($settingsConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1GameUserSettings\]\r?$
     $errors.Add('DefaultGameUserSettings.ini does not define the recommended persistent UEGT1 profile.')
 }
 
+$gameConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultGame.ini') -Raw
+if ($gameConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1RegionSettings\]\r?$' -or
+    $gameConfig -notmatch '(?m)^TileRadius=5\r?$' -or
+    $gameConfig -notmatch '(?m)^CoastStart=3600\.000000\r?$' -or
+    $gameConfig -notmatch '(?m)^MountainMaxElevation=2600\.000000\r?$') {
+    $errors.Add('DefaultGame.ini does not define the v0.3 regional generation profile.')
+}
+
 $externalActorFolder = Join-Path $projectRoot 'Content\__ExternalActors__\Maps\Main'
 $externalActorCount = if (Test-Path -LiteralPath $externalActorFolder -PathType Container) {
     (Get-ChildItem -LiteralPath $externalActorFolder -Recurse -File -Filter '*.uasset').Count
 } else {
     0
 }
-if ($externalActorCount -lt 30) {
-    $errors.Add("The Main World Partition is incomplete; expected at least 30 external actor packages, found $externalActorCount.")
+if ($externalActorCount -lt 130) {
+    $errors.Add("The Main World Partition is incomplete; expected at least 130 regional external actor packages, found $externalActorCount.")
 }
 
 if ($errors.Count -gt 0) {

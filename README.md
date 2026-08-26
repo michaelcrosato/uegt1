@@ -1,8 +1,8 @@
 # UEGT1
 
-UEGT1 is the Unreal Engine 5.8 C++ project for **Signal Grove**, a first-person low-poly open-world foundation targeting Win64, DirectX 12, and Shader Model 6.
+UEGT1 is the Unreal Engine 5.8 C++ project for **Signal Grove**, a first-person low-poly open-region foundation targeting Win64, DirectX 12, and Shader Model 6.
 
-The v0.2 vertical slice is playable: explore a deterministic forest, follow three paths, stabilize three reusable interactable Waystones, and restore the central sanctuary. A launch/pause menu now provides persistent display, quality, and per-feature graphics controls plus an in-game quit path. The checked-in map uses World Partition and One File Per Actor; repeated biome geometry uses hierarchical instancing instead of one Actor per prop.
+The v0.3 starting region is playable and built for expansion: a small sanctuary town anchors a 352 m square deterministic region, with an eastern oceanfront, western farms, northern mountains, and southern tropical forest blended through continuous biome, elevation, moisture, and temperature fields. The original three Waystone paths remain playable. A launch/pause menu provides persistent display, quality, and per-feature graphics controls plus an in-game quit path. The checked-in map uses World Partition, One File Per Actor, HLOD layers, Lumen, Virtual Shadow Maps, volumetric atmosphere, and hierarchical instancing instead of one Actor per prop.
 
 ## Requirements
 
@@ -44,4 +44,4 @@ Common individual commands:
 
 Generated folders, IDE state, test reports, logs, local builds, and secrets are intentionally ignored. Keep Unreal source assets (`Content/**/*.uasset` and `Content/**/*.umap`) under Git when they are intentional project content.
 
-See [the architecture guide](Docs/Architecture.md) for system boundaries and extension rules, and [the playtest guide](Docs/Playtest-0.1.md) for controls, graphics settings, the test loop, and known limits.
+See [the architecture guide](Docs/Architecture.md) for system boundaries, [the regional authoring guide](Docs/Region-Authoring.md) for generation and expansion contracts, and [the playtest guide](Docs/Playtest-0.1.md) for controls, exploration checks, graphics settings, and known limits.
