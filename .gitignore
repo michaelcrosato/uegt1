@@ -1,0 +1,48 @@
+# Unreal Engine generated directories
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# Visual Studio / IDE state
+.vs/
+.vscode/
+.idea/
+*.VC.db
+*.VC.opendb
+*.sdf
+*.sln
+*.suo
+*.opensdf
+*.user
+*.userprefs
+
+# Build products and packaged output
+Build/Receipts/
+Build/Windows/FileOpenOrder/
+LocalBuilds/
+Releases/
+StagedBuilds/
+
+# Unreal transient files
+*.uatbuildrecord
+*.tmp
+*.log
+*.dmp
+
+# OS and tooling noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+*.pem
+
