@@ -8,6 +8,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "UEGT1LogChannels.h"
 #include "World/UEGT1Palette.h"
+#include "World/UEGT1VisualMaterials.h"
 
 AUEGT1Waystone::AUEGT1Waystone()
 {
@@ -73,7 +74,7 @@ void AUEGT1Waystone::BeginPlay()
 	DynamicMaterials.Add(CreateColorMaterial(PedestalMesh, UEGT1Palette::DeepForest));
 	for (UStaticMeshComponent* Shard : ShardMeshes)
 	{
-		DynamicMaterials.Add(CreateColorMaterial(Shard, UEGT1Palette::Amber));
+		DynamicMaterials.Add(CreateColorMaterial(Shard, UEGT1Palette::Amber, true));
 	}
 
 	if (AUEGT1MilestoneGameState* MilestoneState = GetWorld()->GetGameState<AUEGT1MilestoneGameState>())
@@ -83,12 +84,11 @@ void AUEGT1Waystone::BeginPlay()
 	ApplyVisualState();
 }
 
-UMaterialInstanceDynamic* AUEGT1Waystone::CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color)
+UMaterialInstanceDynamic* AUEGT1Waystone::CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color, bool bGlow)
 {
-	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(ShapeMaterial, this);
-	Material->SetVectorParameterValue(TEXT("Color"), Color);
-	Component->SetMaterial(0, Material);
-	return Material;
+	return UEGT1VisualMaterials::Apply(this, Component, ShapeMaterial,
+		bGlow ? EUEGT1VisualMaterial::Glow : EUEGT1VisualMaterial::Surface,
+		Color, bGlow ? 0.16f : 0.88f, bGlow ? 0.84f : 0.20f, 0.0f, bGlow ? 2.8f : 0.0f);
 }
 
 void AUEGT1Waystone::Tick(float DeltaSeconds)

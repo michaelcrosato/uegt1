@@ -30,7 +30,7 @@ private:
 	void HandleObjectiveProgress(int32 ActivatedCount, int32 TotalCount, bool bComplete);
 
 	void ApplyVisualState();
-	UMaterialInstanceDynamic* CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color);
+	UMaterialInstanceDynamic* CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color, bool bGlow = false);
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USceneComponent> SceneRoot;

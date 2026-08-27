@@ -99,6 +99,9 @@ if ($logText.Contains('No authored town found') -or $logText.Contains('Regional 
 if ($logText.Contains("Couldn't spawn Pawn")) {
     throw 'Packaged smoke failed to spawn the first-person player pawn.'
 }
+if ($logText.Contains('missing usage flag') -or $logText.Contains('Default Material will be used in game')) {
+    throw 'Packaged smoke substituted Unreal default materials; inspect material usage flags.'
+}
 
 Write-Host 'Packaged gameplay smoke passed: DX12 regional world load, objective completion, and rendered town frame verified.'
 Write-Host "Runtime log: $runtimeLog"
@@ -221,6 +224,9 @@ foreach ($biomeSignal in @('Dominant=Town', 'Dominant=Coast', 'Dominant=Farmland
 if (-not $regionLogText.Contains('Regional foundation ready: Seed=7319 Tiles=121 Expected=121') -or
     $regionLogText.Contains('Regional tile coverage mismatch')) {
     throw 'Packaged regional capture did not load the complete configured tile grid.'
+}
+if ($regionLogText.Contains('missing usage flag') -or $regionLogText.Contains('Default Material will be used in game')) {
+    throw 'Packaged regional capture substituted Unreal default materials; inspect material usage flags.'
 }
 Write-Host 'Packaged regional smoke passed: town, waterfront, farmland, highlands, and tropics rendered from deterministic viewpoints.'
 Write-Host "Regional log: $regionLog"

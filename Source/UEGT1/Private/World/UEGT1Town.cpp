@@ -7,6 +7,7 @@
 #include "UEGT1LogChannels.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/UEGT1Palette.h"
+#include "World/UEGT1VisualMaterials.h"
 #include "World/UEGT1WorldLayout.h"
 
 AUEGT1Town::AUEGT1Town()
@@ -90,16 +91,16 @@ void AUEGT1Town::RebuildTown()
 	AddWaterfront();
 	AddStreetFurniture();
 
-	AssignColorMaterial(RoadInstances, UEGT1Palette::TownRoad);
-	AssignColorMaterial(WarmWallInstances, UEGT1Palette::PlasterWarm);
-	AssignColorMaterial(CoolWallInstances, UEGT1Palette::PlasterCool);
-	AssignColorMaterial(RoofInstances, UEGT1Palette::RoofTeal);
-	AssignColorMaterial(TrimInstances, UEGT1Palette::Amber * 0.82f);
-	AssignColorMaterial(PierInstances, UEGT1Palette::Bark * 1.35f);
-	AssignColorMaterial(PostInstances, UEGT1Palette::Bark * 0.72f);
-	AssignColorMaterial(LampInstances, UEGT1Palette::Amber);
-	AssignColorMaterial(LighthouseInstances, UEGT1Palette::Paper * 0.92f);
-	AssignColorMaterial(LighthouseRoofInstances, UEGT1Palette::Signal * 0.72f);
+	AssignColorMaterial(RoadInstances, UEGT1Palette::TownRoad, 0.92f, 0.18f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(WarmWallInstances, UEGT1Palette::PlasterWarm, 0.78f, 0.28f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(CoolWallInstances, UEGT1Palette::PlasterCool, 0.74f, 0.30f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(RoofInstances, UEGT1Palette::RoofTeal, 0.30f, 0.62f, EUEGT1VisualMaterial::Surface, 0.04f);
+	AssignColorMaterial(TrimInstances, UEGT1Palette::Amber * 0.82f, 0.52f, 0.46f, EUEGT1VisualMaterial::Surface, 0.03f);
+	AssignColorMaterial(PierInstances, UEGT1Palette::Bark * 1.35f, 0.86f, 0.20f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(PostInstances, UEGT1Palette::Bark * 0.72f, 0.88f, 0.18f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(LampInstances, UEGT1Palette::Amber, 0.16f, 0.82f, EUEGT1VisualMaterial::Glow, 0.0f, 3.2f);
+	AssignColorMaterial(LighthouseInstances, UEGT1Palette::Paper * 0.92f, 0.66f, 0.34f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(LighthouseRoofInstances, UEGT1Palette::Signal * 0.72f, 0.24f, 0.70f, EUEGT1VisualMaterial::Surface, 0.06f);
 }
 
 void AUEGT1Town::AddBuilding(FRandomStream& Random, const FVector& Position)
@@ -173,15 +174,10 @@ void AUEGT1Town::AddStreetFurniture()
 	}
 }
 
-void AUEGT1Town::AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color)
+void AUEGT1Town::AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color,
+	float Roughness, float Specular, EUEGT1VisualMaterial Style, float Metallic, float EmissiveStrength)
 {
-	if (!ShapeMaterial || !Component)
-	{
-		return;
-	}
-	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(ShapeMaterial, this);
-	Material->SetVectorParameterValue(TEXT("Color"), Color);
-	Component->SetMaterial(0, Material);
+	UEGT1VisualMaterials::Apply(this, Component, ShapeMaterial, Style, Color, Roughness, Specular, Metallic, EmissiveStrength);
 }
 
 int32 AUEGT1Town::GetGeneratedInstanceCount() const

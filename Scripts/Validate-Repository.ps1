@@ -14,6 +14,9 @@ $requiredFiles = @(
     'Config\DefaultGameUserSettings.ini',
     'Config\DefaultInput.ini',
     'Content\Maps\Main.umap',
+    'Content\Materials\M_SignalGlow.uasset',
+    'Content\Materials\M_SignalSurface.uasset',
+    'Content\Materials\M_SignalWater.uasset',
     'Docs\Architecture.md',
     'Docs\Playtest-0.1.md',
     'Docs\Region-Authoring.md',
@@ -24,9 +27,11 @@ $requiredFiles = @(
     'Source\UEGT1\Public\World\UEGT1RegionSettings.h',
     'Source\UEGT1\Public\World\UEGT1RegionTypes.h',
     'Source\UEGT1\Public\World\UEGT1Town.h',
+    'Source\UEGT1\Public\World\UEGT1VisualMaterials.h',
     'Source\UEGT1\Private\World\UEGT1RegionSettings.cpp',
     'Source\UEGT1\Private\World\UEGT1RegionTypes.cpp',
     'Source\UEGT1\Private\World\UEGT1Town.cpp',
+    'Source\UEGT1\Private\World\UEGT1VisualMaterials.cpp',
     'Source\UEGT1\Private\World\UEGT1WorldLayout.cpp',
     'Source\UEGT1\Private\Settings\UEGT1GameUserSettings.cpp',
     'Source\UEGT1\Private\UI\SUEGT1Menu.h',
@@ -90,6 +95,9 @@ if ($gameConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1RegionSettings\]\r?$' -or
     $gameConfig -notmatch '(?m)^CoastStart=3600\.000000\r?$' -or
     $gameConfig -notmatch '(?m)^MountainMaxElevation=2600\.000000\r?$') {
     $errors.Add('DefaultGame.ini does not define the v0.3 regional generation profile.')
+}
+if ($gameConfig -notmatch '(?m)^\+DirectoriesToAlwaysCook=\(Path="/Game/Materials"\)\r?$') {
+    $errors.Add('DefaultGame.ini must cook the authored Signal Grove materials used by runtime-generated instances.')
 }
 
 $externalActorFolder = Join-Path $projectRoot 'Content\__ExternalActors__\Maps\Main'

@@ -40,7 +40,7 @@ protected:
 
 private:
 	void ApplyVisualState();
-	UMaterialInstanceDynamic* CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color);
+	UMaterialInstanceDynamic* CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color, bool bGlow = false);
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USceneComponent> SceneRoot;

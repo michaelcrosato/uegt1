@@ -41,7 +41,9 @@ The world is an eleven-by-eleven grid of 3,200 cm tiles: a roughly 352 m square 
 
 Three reserved trail corridors still connect the central sanctuary to distinct Waystones. The deterministic seed is `7319`. Authored and fallback layouts, terrain height, route placement, runtime diagnostics, and automation all call the same sampler.
 
-The visual language deliberately treats low-poly geometry like physical miniatures in believable light: chunky readable silhouettes, faceted slopes, warm plaster and teal roofs, deep climatic greens, ochre crops, pale coastal sand, teal water, warm amber signals, and photographic-scale sun/sky/fog/cloud lighting. The shared palette keeps the mixed treatment coherent.
+The visual language deliberately treats low-poly geometry like physical miniatures in believable light: chunky readable silhouettes, faceted slopes, warm plaster and teal roofs, deep climatic greens, ochre crops, pale coastal sand, teal water, warm amber signals, and photographic-scale sun/sky/fog/cloud lighting. The shared palette keeps the mixed treatment coherent. Three authored master materials separate matte surfaces, reflective water, and emissive signals; `UEGT1VisualMaterials` is the single runtime assignment path for their color and physical-response parameters.
+
+The unbound visual stack uses fixed exposure for deterministic presentation, local exposure to retain readable highlights and shadows, restrained bloom/lens response, Lumen ambient occlusion, real-time skylight capture, cloud shadows, light-shaft response, and low-density volumetric fog. These effects are authored in `CreateInitialContent.py` and remain subordinate to the player-facing feature switches in `UUEGT1GameUserSettings`.
 
 The map is World Partition with 134 external actor packages and existing HLOD layer assets. This is intentionally more infrastructure than the current footprint needs: future districts, tiles, authored set dressing, and landmarks can become spatially streamed content without replacing the map format or creating a source-control bottleneck.
 
@@ -50,7 +52,7 @@ The map is World Partition with 134 external actor packages and existing HLOD la
 - Target: 1920×1080, 60 fps on an RTX 3060-class GPU.
 - Default quality: level 2 for view distance, shadows, Lumen GI/reflections, post, effects, foliage, and shading; level 3 textures.
 - The recommended persistent profile is borderless 1920×1080 at 60 fps, VSync on, 100% resolution scale, and all optional effects enabled. Explicit feature switches override the related scalability result without changing unrelated groups.
-- Current authored foundation: about 10,000 instanced primitives across 121 regional tiles plus roughly 100 town instances.
+- Current authored foundation: about 10,000 instanced primitives across 121 regional tiles plus roughly 100 town instances. Repeated geometry shares three compact master materials and per-component dynamic instances rather than unique material assets.
 - HISM culling is configured per prop layer; only ground and major rocks/trunks participate in collision.
 - Interaction traces run at 20 Hz rather than every render frame.
 - Dynamic lights do not cast shadows. Repeated ambient motion changes component transforms, not skeletal animation graphs.
@@ -65,6 +67,7 @@ Measure before increasing instance density, light radius/count, shadowed movable
 4. Prefer HISM/ISM, PCG, or pooled actors for repeated environment content. Use individual Actors for gameplay identity.
 5. Preserve the `LogUEGT1` signals used by smoke automation, or update the assertions in the same change.
 6. Run `Build.ps1`, `Test.ps1`, and `Smoke-Gameplay.ps1` after C++/content changes. Run the packaged rendered smoke before a playtest handoff.
+7. Keep material selection and parameter wiring in `UEGT1VisualMaterials`; add an authored master under `/Game/Materials` only when a genuinely different shading model is needed.
 
 ## Diagnostics and automation
 

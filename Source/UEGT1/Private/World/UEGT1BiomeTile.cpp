@@ -7,6 +7,7 @@
 #include "Settings/UEGT1GameUserSettings.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/UEGT1Palette.h"
+#include "World/UEGT1VisualMaterials.h"
 #include "World/UEGT1WorldLayout.h"
 
 AUEGT1BiomeTile::AUEGT1BiomeTile()
@@ -103,22 +104,22 @@ void AUEGT1BiomeTile::RebuildTile()
 	GenerateRegionalFeatures(Random);
 
 	const float TileTint = ((TileCoordinate.X + TileCoordinate.Y) & 1) == 0 ? 1.0f : 0.96f;
-	AssignColorMaterial(GroundInstances, GetBlendedGroundColor(TileSample.Biomes) * TileTint);
-	AssignColorMaterial(TrailInstances, UEGT1Palette::Path * 1.22f);
-	AssignColorMaterial(TrunkInstances, UEGT1Palette::Bark);
+	AssignColorMaterial(GroundInstances, GetBlendedGroundColor(TileSample.Biomes) * TileTint, 0.88f, 0.24f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(TrailInstances, UEGT1Palette::Path * 1.22f, 0.94f, 0.18f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(TrunkInstances, UEGT1Palette::Bark, 0.84f, 0.22f, EUEGT1VisualMaterial::Surface);
 	AssignColorMaterial(ConiferInstances, FMath::Lerp(UEGT1Palette::Fern, UEGT1Palette::DeepForest,
-		TileSample.Biomes.Highlands * 0.65f));
+		TileSample.Biomes.Highlands * 0.65f), 0.72f, 0.30f, EUEGT1VisualMaterial::Surface);
 	AssignColorMaterial(BroadleafInstances, FMath::Lerp(UEGT1Palette::Fern, UEGT1Palette::Tropical,
-		TileSample.Biomes.Tropical));
+		TileSample.Biomes.Tropical), 0.66f, 0.34f, EUEGT1VisualMaterial::Surface);
 	AssignColorMaterial(RockInstances, FMath::Lerp(UEGT1Palette::Stone, UEGT1Palette::Sand,
-		TileSample.Biomes.Coast * 0.45f));
+		TileSample.Biomes.Coast * 0.45f), 0.93f, 0.16f, EUEGT1VisualMaterial::Surface);
 	AssignColorMaterial(GrassInstances, FMath::Lerp(UEGT1Palette::Meadow, UEGT1Palette::Tropical,
-		TileSample.Biomes.Tropical));
+		TileSample.Biomes.Tropical), 0.70f, 0.30f, EUEGT1VisualMaterial::Surface);
 	AssignColorMaterial(CropInstances, FMath::Lerp(UEGT1Palette::Wheat, UEGT1Palette::Fern,
-		((TileCoordinate.X + TileCoordinate.Y) & 1) == 0 ? 0.15f : 0.48f));
-	AssignColorMaterial(WaterInstances, UEGT1Palette::Water);
-	AssignColorMaterial(WaveInstances, UEGT1Palette::WaterHighlight);
-	AssignColorMaterial(PeakInstances, UEGT1Palette::Highland * 0.82f);
+		((TileCoordinate.X + TileCoordinate.Y) & 1) == 0 ? 0.15f : 0.48f), 0.76f, 0.26f, EUEGT1VisualMaterial::Surface);
+	AssignColorMaterial(WaterInstances, UEGT1Palette::Water, 0.08f, 0.98f, EUEGT1VisualMaterial::Water, 0.04f, 0.025f);
+	AssignColorMaterial(WaveInstances, UEGT1Palette::WaterHighlight, 0.16f, 0.90f, EUEGT1VisualMaterial::Glow, 0.0f, 0.55f);
+	AssignColorMaterial(PeakInstances, UEGT1Palette::Highland * 0.82f, 0.96f, 0.12f, EUEGT1VisualMaterial::Surface);
 }
 
 void AUEGT1BiomeTile::GenerateTerrain(FRandomStream& Random)
@@ -302,15 +303,10 @@ FLinearColor AUEGT1BiomeTile::GetBlendedGroundColor(const FUEGT1BiomeWeights& We
 	return Color;
 }
 
-void AUEGT1BiomeTile::AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color)
+void AUEGT1BiomeTile::AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color,
+	float Roughness, float Specular, EUEGT1VisualMaterial Style, float Metallic, float EmissiveStrength)
 {
-	if (!ShapeMaterial || !Component)
-	{
-		return;
-	}
-	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(ShapeMaterial, this);
-	Material->SetVectorParameterValue(TEXT("Color"), Color);
-	Component->SetMaterial(0, Material);
+	UEGT1VisualMaterials::Apply(this, Component, ShapeMaterial, Style, Color, Roughness, Specular, Metallic, EmissiveStrength);
 }
 
 bool AUEGT1BiomeTile::IsInsideTile(const FVector& WorldPosition, float Padding) const

@@ -8,6 +8,7 @@ class UHierarchicalInstancedStaticMeshComponent;
 class UMaterialInterface;
 class USceneComponent;
 class UStaticMesh;
+enum class EUEGT1VisualMaterial : uint8;
 
 UCLASS()
 class UEGT1_API AUEGT1Town : public AActor
@@ -35,7 +36,8 @@ private:
 	void AddWaterfront();
 	void AddStreetFurniture();
 	UHierarchicalInstancedStaticMeshComponent* CreateInstanceComponent(const FName Name, UStaticMesh* Mesh, bool bCollision);
-	void AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color);
+	void AssignColorMaterial(UHierarchicalInstancedStaticMeshComponent* Component, const FLinearColor& Color,
+		float Roughness, float Specular, EUEGT1VisualMaterial Style, float Metallic = 0.0f, float EmissiveStrength = 0.0f);
 
 	UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> SceneRoot;
 	UPROPERTY(VisibleAnywhere) TObjectPtr<UHierarchicalInstancedStaticMeshComponent> RoadInstances;

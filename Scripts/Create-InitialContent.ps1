@@ -21,6 +21,11 @@ $pythonScript = Join-Path $PSScriptRoot 'CreateInitialContent.py'
 $forceArgument = if ($Force) { '-UEGT1ForceContent' } else { '-UEGT1CreateContent' }
 $generationLog = Join-Path $projectRoot 'Saved\Logs\CreateInitialContent.log'
 $externalActorFolder = Join-Path $projectRoot 'Content\__ExternalActors__\Maps\Main'
+$materialFiles = @(
+    (Join-Path $projectRoot 'Content\Materials\M_SignalSurface.uasset'),
+    (Join-Path $projectRoot 'Content\Materials\M_SignalWater.uasset'),
+    (Join-Path $projectRoot 'Content\Materials\M_SignalGlow.uasset')
+)
 $mapWasWorldPartition = Test-Path -LiteralPath $externalActorFolder -PathType Container
 if (Test-Path -LiteralPath $generationLog) {
     Remove-Item -LiteralPath $generationLog -Force
@@ -37,6 +42,11 @@ if (-not (Test-Path -LiteralPath $generationLog -PathType Leaf) -or
 }
 if (-not (Test-Path -LiteralPath $mapFile -PathType Leaf)) {
     throw 'Unreal exited successfully but Content/Maps/Main.umap was not created.'
+}
+foreach ($materialFile in $materialFiles) {
+    if (-not (Test-Path -LiteralPath $materialFile -PathType Leaf)) {
+        throw "Unreal exited successfully but visual material '$materialFile' was not created."
+    }
 }
 
 if (-not $mapWasWorldPartition) {

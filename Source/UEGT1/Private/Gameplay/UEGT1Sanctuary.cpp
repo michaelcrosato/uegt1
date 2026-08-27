@@ -8,6 +8,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "UEGT1LogChannels.h"
 #include "World/UEGT1Palette.h"
+#include "World/UEGT1VisualMaterials.h"
 
 AUEGT1Sanctuary::AUEGT1Sanctuary()
 {
@@ -67,7 +68,7 @@ void AUEGT1Sanctuary::BeginPlay()
 	{
 		CreateColorMaterial(Slab, UEGT1Palette::DeepForest);
 	}
-	CoreMaterial = CreateColorMaterial(CoreMesh, UEGT1Palette::Amber);
+	CoreMaterial = CreateColorMaterial(CoreMesh, UEGT1Palette::Amber, true);
 
 	if (AUEGT1MilestoneGameState* MilestoneState = GetWorld()->GetGameState<AUEGT1MilestoneGameState>())
 	{
@@ -76,12 +77,11 @@ void AUEGT1Sanctuary::BeginPlay()
 	}
 }
 
-UMaterialInstanceDynamic* AUEGT1Sanctuary::CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color)
+UMaterialInstanceDynamic* AUEGT1Sanctuary::CreateColorMaterial(UPrimitiveComponent* Component, const FLinearColor& Color, bool bGlow)
 {
-	UMaterialInstanceDynamic* Material = UMaterialInstanceDynamic::Create(ShapeMaterial, this);
-	Material->SetVectorParameterValue(TEXT("Color"), Color);
-	Component->SetMaterial(0, Material);
-	return Material;
+	return UEGT1VisualMaterials::Apply(this, Component, ShapeMaterial,
+		bGlow ? EUEGT1VisualMaterial::Glow : EUEGT1VisualMaterial::Surface,
+		Color, bGlow ? 0.14f : 0.90f, bGlow ? 0.88f : 0.18f, 0.0f, bGlow ? 3.6f : 0.0f);
 }
 
 void AUEGT1Sanctuary::HandleObjectiveProgress(int32 ActivatedCount, int32 TotalCount, bool bComplete)
