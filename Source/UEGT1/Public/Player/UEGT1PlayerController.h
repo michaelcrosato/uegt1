@@ -13,6 +13,13 @@ public:
 	void OpenMenu(bool bInitialMenu = false);
 	void CloseMenu();
 	void OpenGraphicsMenuForAutomation();
+	void OpenLevelMenuForAutomation();
+	void TravelToSignalGrove();
+	void TravelToTechDemo();
+	void ToggleDeveloperMode();
+	void ToggleDeveloperFlight();
+	bool IsDeveloperModeEnabled() const;
+	bool IsDeveloperFlightEnabled() const;
 	void RequestQuitFromMenu();
 	bool IsMenuOpen() const { return MenuWidget.IsValid(); }
 
@@ -22,6 +29,7 @@ protected:
 
 private:
 	void ToggleMenu();
+	void TravelToLevel(FName LevelName);
 
 	TSharedPtr<class SUEGT1Menu> MenuWidget;
 };

@@ -1,6 +1,6 @@
 # Signal Grove regional authoring contract
 
-This guide is the shortest reliable route for a future Codex session to understand, tune, regenerate, and verify the starting region.
+This guide is the shortest reliable route for a future Codex session to understand, tune, regenerate, and verify Signal Grove's starting region. Lumen Wilds is a separate map with its own contract in `Docs/Lumen-Wilds.md`.
 
 ## Coordinate and scale contract
 

@@ -10,7 +10,11 @@ enum class EUEGT1VisualMaterial : uint8
 {
 	Surface,
 	Water,
-	Glow
+	Glow,
+	TechTerrain,
+	TechSurface,
+	TechFoliage,
+	TechWater
 };
 
 namespace UEGT1VisualMaterials

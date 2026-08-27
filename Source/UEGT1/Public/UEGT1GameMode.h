@@ -18,19 +18,30 @@ public:
 private:
 	void CaptureAutomatedSmokeFrame();
 	void CaptureAutomatedMenuFrame();
+	void CaptureAutomatedLevelMenuFrame();
+	void SelectAutomatedTechDemo();
 	void PositionAutomatedRegionView();
 	void CaptureAutomatedRegionFrame();
+	void PositionAutomatedTechDemoView();
+	void CaptureAutomatedTechDemoFrame();
 	void FinishAutomatedSmokeRun();
 	void FinishAutomatedMenuSmokeRun();
 
 	FString AutomatedCapturePath;
 	FString AutomatedMenuCapturePath;
+	FString AutomatedLevelMenuCapturePath;
 	FString AutomatedRegionCaptureFolder;
+	FString AutomatedTechDemoCaptureFolder;
 	int32 AutomatedRegionCaptureIndex = 0;
+	int32 AutomatedTechDemoCaptureIndex = 0;
 	FTimerHandle CaptureTimerHandle;
 	FTimerHandle MenuCaptureTimerHandle;
+	FTimerHandle LevelMenuCaptureTimerHandle;
+	FTimerHandle LevelTravelTimerHandle;
 	FTimerHandle RegionCaptureTimerHandle;
+	FTimerHandle TechDemoCaptureTimerHandle;
 	FTimerHandle ExitTimerHandle;
+	bool bIsTechDemoMap = false;
 
 	UPROPERTY(Transient)
 	TObjectPtr<AActor> RuntimePlayerStart;

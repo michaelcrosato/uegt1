@@ -16,12 +16,22 @@ public:
 	AUEGT1ExplorerCharacter();
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator, AActor* DamageCauser) override;
 
 	UFUNCTION(BlueprintPure, Category = "UEGT1|Interaction")
 	UUEGT1InteractionComponent* GetInteractionComponent() const { return InteractionComponent; }
 
 	UFUNCTION(BlueprintPure, Category = "UEGT1|Movement")
 	bool IsSprinting() const { return bSprinting; }
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Developer Mode")
+	bool IsDeveloperModeEnabled() const;
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Developer Mode")
+	bool IsDeveloperFlying() const;
+
+	void RefreshDeveloperMode();
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,6 +43,13 @@ private:
 	void LookUp(float Value);
 	void StartSprint();
 	void StopSprint();
+	void StartJumpOrAscend();
+	void StopJumpOrAscend();
+	void StartDescend();
+	void StopDescend();
+	void ToggleDeveloperMode();
+	void ToggleDeveloperFlight();
+	void ApplyMovementTuning();
 	void Interact();
 	void ToggleDiagnostics();
 
@@ -48,6 +65,15 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Movement")
 	float SprintSpeed = 760.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Developer Mode")
+	float DeveloperWalkSpeed = 2100.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Developer Mode")
+	float DeveloperSprintSpeed = 4200.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Developer Mode")
+	float DeveloperFlySpeed = 3200.0f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Camera")
 	float BaseFieldOfView = 92.0f;
 
@@ -57,4 +83,6 @@ private:
 	float StandingCameraHeight = 64.0f;
 	float MovementTime = 0.0f;
 	bool bSprinting = false;
+	bool bAscending = false;
+	bool bDescending = false;
 };

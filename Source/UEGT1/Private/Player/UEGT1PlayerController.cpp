@@ -2,8 +2,12 @@
 
 #include "Engine/Engine.h"
 #include "Engine/GameViewportClient.h"
+#include "Development/UEGT1DeveloperModeSubsystem.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Gameplay/UEGT1SessionSubsystem.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Player/UEGT1ExplorerCharacter.h"
 #include "Settings/UEGT1GameUserSettings.h"
 #include "UI/SUEGT1Menu.h"
 #include "UEGT1LogChannels.h"
@@ -23,7 +27,8 @@ void AUEGT1PlayerController::BeginPlay()
 	InputMode.SetConsumeCaptureMouseDown(true);
 	SetInputMode(InputMode);
 
-	if (!FApp::IsUnattended())
+	const UUEGT1SessionSubsystem* Session = GetGameInstance()->GetSubsystem<UUEGT1SessionSubsystem>();
+	if (!FApp::IsUnattended() && (!Session || !Session->HasSelectedInitialLevel()))
 	{
 		GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]() { OpenMenu(true); }));
 	}
@@ -106,6 +111,76 @@ void AUEGT1PlayerController::OpenGraphicsMenuForAutomation()
 		}
 		MenuWidget->ShowGraphicsPage();
 	}
+}
+
+void AUEGT1PlayerController::OpenLevelMenuForAutomation()
+{
+	OpenMenu(true);
+}
+
+void AUEGT1PlayerController::TravelToSignalGrove()
+{
+	TravelToLevel(TEXT("Main"));
+}
+
+void AUEGT1PlayerController::TravelToTechDemo()
+{
+	TravelToLevel(TEXT("TechDemo"));
+}
+
+void AUEGT1PlayerController::TravelToLevel(FName LevelName)
+{
+	if (LevelName != TEXT("Main") && LevelName != TEXT("TechDemo"))
+	{
+		UE_LOG(LogUEGT1, Error, TEXT("Rejected unknown level selection: %s"), *LevelName.ToString());
+		return;
+	}
+	if (UUEGT1SessionSubsystem* Session = GetGameInstance()->GetSubsystem<UUEGT1SessionSubsystem>())
+	{
+		Session->MarkInitialLevelSelected();
+	}
+	if (IsMenuOpen())
+	{
+		CloseMenu();
+	}
+	UE_LOG(LogUEGT1, Display, TEXT("Level selected from menu: %s"), *LevelName.ToString());
+	UGameplayStatics::OpenLevel(this, LevelName);
+}
+
+void AUEGT1PlayerController::ToggleDeveloperMode()
+{
+	if (UUEGT1DeveloperModeSubsystem* DeveloperMode = GetGameInstance()->GetSubsystem<UUEGT1DeveloperModeSubsystem>())
+	{
+		DeveloperMode->SetEnabled(!DeveloperMode->IsEnabled());
+		if (AUEGT1ExplorerCharacter* Explorer = Cast<AUEGT1ExplorerCharacter>(GetPawn()))
+		{
+			Explorer->RefreshDeveloperMode();
+		}
+	}
+}
+
+void AUEGT1PlayerController::ToggleDeveloperFlight()
+{
+	if (UUEGT1DeveloperModeSubsystem* DeveloperMode = GetGameInstance()->GetSubsystem<UUEGT1DeveloperModeSubsystem>())
+	{
+		DeveloperMode->SetFlightEnabled(!DeveloperMode->IsFlightEnabled());
+		if (AUEGT1ExplorerCharacter* Explorer = Cast<AUEGT1ExplorerCharacter>(GetPawn()))
+		{
+			Explorer->RefreshDeveloperMode();
+		}
+	}
+}
+
+bool AUEGT1PlayerController::IsDeveloperModeEnabled() const
+{
+	const UUEGT1DeveloperModeSubsystem* DeveloperMode = GetGameInstance()->GetSubsystem<UUEGT1DeveloperModeSubsystem>();
+	return DeveloperMode && DeveloperMode->IsEnabled();
+}
+
+bool AUEGT1PlayerController::IsDeveloperFlightEnabled() const
+{
+	const UUEGT1DeveloperModeSubsystem* DeveloperMode = GetGameInstance()->GetSubsystem<UUEGT1DeveloperModeSubsystem>();
+	return DeveloperMode && DeveloperMode->IsFlightEnabled();
 }
 
 void AUEGT1PlayerController::RequestQuitFromMenu()

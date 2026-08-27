@@ -159,20 +159,32 @@ void SUEGT1Menu::Construct(const FArguments& InArgs)
 TSharedRef<SWidget> SUEGT1Menu::BuildHomePage()
 {
 	TSharedRef<SButton> ContinueButton = MakeActionButton(
-		bIsInitialMenu ? NSLOCTEXT("UEGT1", "EnterGrove", "ENTER THE GROVE") : NSLOCTEXT("UEGT1", "Resume", "RETURN TO THE GROVE"),
-		FSimpleDelegate::CreateSP(this, &SUEGT1Menu::ResumeGame), true);
-	PrimaryButton = ContinueButton;
+		bIsInitialMenu ? NSLOCTEXT("UEGT1", "ContinueCurrent", "CONTINUE IN CURRENT LEVEL") : NSLOCTEXT("UEGT1", "Resume", "RESUME CURRENT LEVEL"),
+		FSimpleDelegate::CreateSP(this, &SUEGT1Menu::ResumeGame));
+	TSharedRef<SButton> SignalGroveButton = MakeActionButton(
+		NSLOCTEXT("UEGT1", "LoadSignalGrove", "SIGNAL GROVE  •  STORY WORLD"),
+		FSimpleDelegate::CreateSP(this, &SUEGT1Menu::LoadSignalGrove), true);
+	TSharedRef<SButton> TechDemoButton = MakeActionButton(
+		NSLOCTEXT("UEGT1", "LoadTechDemo", "LUMEN WILDS  •  UE5 TECH DEMO"),
+		FSimpleDelegate::CreateSP(this, &SUEGT1Menu::LoadTechDemo), true);
+	TSharedRef<SButton> DeveloperButton = MakeActionButton(FText::GetEmpty(), FSimpleDelegate::CreateSP(this, &SUEGT1Menu::ToggleDeveloperMode));
+	DeveloperButton->SetContent(SNew(STextBlock).Text_Lambda([this]() { return GetDeveloperModeLabel(); })
+		.Font(FCoreStyle::GetDefaultFontStyle("Bold", 13)).ColorAndOpacity(Paper).Justification(ETextJustify::Center));
+	TSharedRef<SButton> FlightButton = MakeActionButton(FText::GetEmpty(), FSimpleDelegate::CreateSP(this, &SUEGT1Menu::ToggleDeveloperFlight));
+	FlightButton->SetContent(SNew(STextBlock).Text_Lambda([this]() { return GetDeveloperFlightLabel(); })
+		.Font(FCoreStyle::GetDefaultFontStyle("Bold", 13)).ColorAndOpacity(Paper).Justification(ETextJustify::Center));
+	PrimaryButton = SignalGroveButton;
 
 	return SNew(SHorizontalBox)
 		+ SHorizontalBox::Slot()
-		.FillWidth(0.54f)
+		.FillWidth(0.50f)
 		.Padding(18.0f, 22.0f, 78.0f, 20.0f)
 		[
 			SNew(SVerticalBox)
 			+ SVerticalBox::Slot().AutoHeight()
 			[
 				SNew(STextBlock)
-				.Text(NSLOCTEXT("UEGT1", "SignalGroveTitle", "SIGNAL\nGROVE"))
+				.Text(NSLOCTEXT("UEGT1", "WorldsTitle", "UE5\nWORLDS"))
 				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 66))
 				.ColorAndOpacity(Paper)
 				.LineHeightPercentage(0.78f)
@@ -187,7 +199,7 @@ TSharedRef<SWidget> SUEGT1Menu::BuildHomePage()
 			+ SVerticalBox::Slot().AutoHeight().Padding(2.0f, 28.0f, 0.0f, 0.0f)
 			[
 				SNew(STextBlock)
-				.Text(NSLOCTEXT("UEGT1", "MenuLore", "THREE SIGNALS WAIT BEYOND THE SANCTUARY.\nFOLLOW THE AMBER PATHS. WAKE THE GROVE."))
+				.Text(NSLOCTEXT("UEGT1", "MenuLore", "CHOOSE A HAND-AUTHORED ADVENTURE OR A PURE\nREAL-TIME ENVIRONMENT SHOWCASE. THEN EXPLORE."))
 				.Font(FCoreStyle::GetDefaultFontStyle("Regular", 15))
 				.ColorAndOpacity(Muted)
 				.LineHeightPercentage(1.35f)
@@ -196,13 +208,13 @@ TSharedRef<SWidget> SUEGT1Menu::BuildHomePage()
 			+ SVerticalBox::Slot().AutoHeight()
 			[
 				SNew(STextBlock)
-				.Text(NSLOCTEXT("UEGT1", "MenuVersion", "V0.3  •  REGIONAL FOUNDATION"))
+				.Text(NSLOCTEXT("UEGT1", "MenuVersion", "V0.4  •  LUMEN / PROCEDURAL TERRAIN / VIRTUAL SHADOW MAPS"))
 				.Font(FCoreStyle::GetDefaultFontStyle("Regular", 11))
 				.ColorAndOpacity(FLinearColor(0.25f, 0.48f, 0.41f, 1.0f))
 			]
 		]
 		+ SHorizontalBox::Slot()
-		.FillWidth(0.46f)
+		.FillWidth(0.50f)
 		[
 			SNew(SBorder)
 			.BorderImage(FCoreStyle::Get().GetBrush("WhiteBrush"))
@@ -213,11 +225,20 @@ TSharedRef<SWidget> SUEGT1Menu::BuildHomePage()
 				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 4.0f, 0.0f, 8.0f)
 				[
 					SNew(STextBlock)
-					.Text(bIsInitialMenu ? NSLOCTEXT("UEGT1", "MainMenu", "MAIN MENU") : NSLOCTEXT("UEGT1", "PausedMenu", "PAUSED"))
+					.Text(NSLOCTEXT("UEGT1", "LevelSelect", "SELECT A LEVEL"))
 					.Font(FCoreStyle::GetDefaultFontStyle("Bold", 14))
 					.ColorAndOpacity(Signal)
 				]
-				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 18.0f, 0.0f, 0.0f)[ContinueButton]
+				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 12.0f, 0.0f, 0.0f)[SignalGroveButton]
+				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 12.0f, 0.0f, 0.0f)[TechDemoButton]
+				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 18.0f, 0.0f, 0.0f)
+				[
+					SNew(STextBlock).Text(NSLOCTEXT("UEGT1", "DevToolsHeader", "DEVELOPER TOOLS"))
+					.Font(FCoreStyle::GetDefaultFontStyle("Bold", 11)).ColorAndOpacity(Amber)
+				]
+				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 8.0f, 0.0f, 0.0f)[DeveloperButton]
+				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 8.0f, 0.0f, 0.0f)[FlightButton]
+				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 16.0f, 0.0f, 0.0f)[ContinueButton]
 				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 12.0f, 0.0f, 0.0f)
 				[
 					MakeActionButton(NSLOCTEXT("UEGT1", "Graphics", "GRAPHICS & DISPLAY"), FSimpleDelegate::CreateSP(this, &SUEGT1Menu::ShowGraphicsPage))
@@ -587,6 +608,54 @@ void SUEGT1Menu::QuitGame()
 	{
 		Controller->RequestQuitFromMenu();
 	}
+}
+
+void SUEGT1Menu::LoadSignalGrove()
+{
+	if (AUEGT1PlayerController* Controller = OwnerController.Get())
+	{
+		Controller->TravelToSignalGrove();
+	}
+}
+
+void SUEGT1Menu::LoadTechDemo()
+{
+	if (AUEGT1PlayerController* Controller = OwnerController.Get())
+	{
+		Controller->TravelToTechDemo();
+	}
+}
+
+void SUEGT1Menu::ToggleDeveloperMode()
+{
+	if (AUEGT1PlayerController* Controller = OwnerController.Get())
+	{
+		Controller->ToggleDeveloperMode();
+	}
+}
+
+void SUEGT1Menu::ToggleDeveloperFlight()
+{
+	if (AUEGT1PlayerController* Controller = OwnerController.Get())
+	{
+		Controller->ToggleDeveloperFlight();
+	}
+}
+
+FText SUEGT1Menu::GetDeveloperModeLabel() const
+{
+	const AUEGT1PlayerController* Controller = OwnerController.Get();
+	return Controller && Controller->IsDeveloperModeEnabled()
+		? NSLOCTEXT("UEGT1", "DevModeOn", "DEV MODE  •  ON  •  INVINCIBLE + FAST")
+		: NSLOCTEXT("UEGT1", "DevModeOff", "DEV MODE  •  OFF  [F8]");
+}
+
+FText SUEGT1Menu::GetDeveloperFlightLabel() const
+{
+	const AUEGT1PlayerController* Controller = OwnerController.Get();
+	return Controller && Controller->IsDeveloperFlightEnabled()
+		? NSLOCTEXT("UEGT1", "DevFlightOn", "FLIGHT  •  ON  •  SPACE / CTRL")
+		: NSLOCTEXT("UEGT1", "DevFlightOff", "FLIGHT  •  OFF  [F9]");
 }
 
 void SUEGT1Menu::ToggleAllFeatures()

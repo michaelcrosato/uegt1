@@ -3,7 +3,9 @@
 #include "Misc/AutomationTest.h"
 
 #include "Engine/Level.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "Development/UEGT1DeveloperModeSubsystem.h"
 #include "GameFramework/InputSettings.h"
 #include "HAL/IConsoleManager.h"
 #include "Gameplay/UEGT1MilestoneGameState.h"
@@ -17,6 +19,7 @@
 #include "UI/UEGT1HUD.h"
 #include "World/UEGT1WorldLayout.h"
 #include "World/UEGT1RegionSettings.h"
+#include "World/UEGT1TechDemoEnvironment.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FUEGT1ProjectConfigurationTest,
@@ -36,7 +39,8 @@ bool FUEGT1ProjectConfigurationTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("DirectX 12 is the Windows default RHI"), DefaultRHI, FString(TEXT("DefaultGraphicsRHI_DX12")));
 
 	const UInputSettings* InputSettings = GetDefault<UInputSettings>();
-	for (const FName Action : { FName(TEXT("Jump")), FName(TEXT("Sprint")), FName(TEXT("Interact")), FName(TEXT("ToggleDiagnostics")), FName(TEXT("PauseMenu")) })
+	for (const FName Action : { FName(TEXT("Jump")), FName(TEXT("Sprint")), FName(TEXT("Interact")), FName(TEXT("ToggleDiagnostics")),
+		FName(TEXT("ToggleDeveloperMode")), FName(TEXT("ToggleDeveloperFlight")), FName(TEXT("DeveloperDescend")), FName(TEXT("PauseMenu")) })
 	{
 		TArray<FInputActionKeyMapping> Mappings;
 		InputSettings->GetActionMappingByName(Action, Mappings);
@@ -49,6 +53,32 @@ bool FUEGT1ProjectConfigurationTest::RunTest(const FString& Parameters)
 		InputSettings->GetAxisMappingByName(Axis, Mappings);
 		TestTrue(*FString::Printf(TEXT("%s has an input mapping"), *Axis.ToString()), !Mappings.IsEmpty());
 	}
+	return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FUEGT1DeveloperModeTest,
+	"UEGT1.Smoke.DeveloperMode",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUEGT1DeveloperModeTest::RunTest(const FString& Parameters)
+{
+	UGameInstance* TestGameInstance = NewObject<UGameInstance>();
+	UUEGT1DeveloperModeSubsystem* DeveloperMode = NewObject<UUEGT1DeveloperModeSubsystem>(TestGameInstance);
+	TestNotNull(TEXT("Developer mode state can be created independently"), DeveloperMode);
+	if (!DeveloperMode)
+	{
+		return false;
+	}
+	TestFalse(TEXT("Developer mode starts disabled without the command-line opt-in"), DeveloperMode->IsEnabled());
+	DeveloperMode->SetEnabled(true);
+	TestTrue(TEXT("Developer mode can enable invincibility and fast traversal state"), DeveloperMode->IsEnabled());
+	DeveloperMode->SetFlightEnabled(true);
+	TestTrue(TEXT("Flight can be enabled while developer mode is active"), DeveloperMode->IsFlightEnabled());
+	DeveloperMode->SetEnabled(false);
+	TestFalse(TEXT("Disabling developer mode also disables flight"), DeveloperMode->IsFlightEnabled());
+	DeveloperMode->SetFlightEnabled(true);
+	TestTrue(TEXT("Enabling flight is a convenient opt-in to developer mode"), DeveloperMode->IsEnabled() && DeveloperMode->IsFlightEnabled());
 	return !HasAnyErrors();
 }
 
@@ -178,6 +208,33 @@ bool FUEGT1WorldAssetTest::RunTest(const FString& Parameters)
 		// The runtime smoke separately proves that all authored spatial content is available in game.
 		TestTrue(TEXT("Main uses World Partition external actor packaging"), MainWorld->PersistentLevel && MainWorld->PersistentLevel->IsUsingExternalActors());
 	}
+
+	UWorld* TechDemoWorld = LoadObject<UWorld>(nullptr, TEXT("/Game/Maps/TechDemo.TechDemo"));
+	TestNotNull(TEXT("The Lumen Wilds tech-demo world can be loaded"), TechDemoWorld);
+	if (TechDemoWorld && TechDemoWorld->PersistentLevel)
+	{
+		const AUEGT1TechDemoEnvironment* Environment = nullptr;
+		for (const AActor* Actor : TechDemoWorld->PersistentLevel->Actors)
+		{
+			if (const AUEGT1TechDemoEnvironment* Candidate = Cast<AUEGT1TechDemoEnvironment>(Actor))
+			{
+				Environment = Candidate;
+				break;
+			}
+		}
+		TestNotNull(TEXT("The tech-demo map contains its deterministic environment actor"), Environment);
+		if (Environment)
+		{
+			TestTrue(TEXT("The authored showcase persists more than ten thousand environmental instances"),
+				Environment->GetGeneratedInstanceCount() > 10000);
+		}
+	}
+	const float ValleyHeight = AUEGT1TechDemoEnvironment::SampleTerrainHeight(FVector2D(0.0f, -9000.0f));
+	const float RidgeHeight = AUEGT1TechDemoEnvironment::SampleTerrainHeight(FVector2D(15000.0f, 9000.0f));
+	TestTrue(TEXT("The tech-demo terrain rises from valley to perimeter ridge"), RidgeHeight > ValleyHeight + 900.0f);
+	const FVector Start = AUEGT1TechDemoEnvironment::GetRecommendedPlayerStart();
+	TestTrue(TEXT("The tech-demo start sits safely above its generated terrain"),
+		Start.Z > AUEGT1TechDemoEnvironment::SampleTerrainHeight(FVector2D(Start.X, Start.Y)) + 100.0f);
 #endif
 	return !HasAnyErrors();
 }

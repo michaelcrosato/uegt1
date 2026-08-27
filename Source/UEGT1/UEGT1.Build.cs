@@ -14,7 +14,8 @@ public class UEGT1 : ModuleRules
 			"DeveloperSettings",
 			"Engine",
 			"InputCore",
-			"PhysicsCore"
+			"PhysicsCore",
+			"ProceduralMeshComponent"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new[]

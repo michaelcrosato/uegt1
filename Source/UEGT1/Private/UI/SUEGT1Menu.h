@@ -38,6 +38,12 @@ private:
 	void DiscardSettings();
 	void RestoreRecommendedSettings();
 	void QuitGame();
+	void LoadSignalGrove();
+	void LoadTechDemo();
+	void ToggleDeveloperMode();
+	void ToggleDeveloperFlight();
+	FText GetDeveloperModeLabel() const;
+	FText GetDeveloperFlightLabel() const;
 	void ToggleAllFeatures();
 	FText GetAllFeaturesState() const;
 	FText GetStatusText() const { return StatusText; }

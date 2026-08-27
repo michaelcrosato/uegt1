@@ -17,6 +17,7 @@ private:
 	void DrawObjectivePanel(float ScreenWidth, float ScreenHeight);
 	void DrawInteractionPrompt(float ScreenWidth, float ScreenHeight);
 	void DrawCrosshair(float ScreenWidth, float ScreenHeight);
+	void DrawDeveloperModePanel(float ScreenWidth, float ScreenHeight);
 	void DrawDiagnostics(float ScreenWidth, float ScreenHeight);
 
 	bool bShowDiagnostics = false;

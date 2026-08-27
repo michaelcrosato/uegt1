@@ -1,8 +1,8 @@
-# Signal Grove v0.3 playtest
+# UEGT1 v0.4 playtest
 
 ## Goal
 
-Explore the sanctuary town and its four outward regions, then walk the three marked paths, stabilize each amber Waystone, and return the signal to the central sanctuary. A successful run ends when the sanctuary core turns teal and the completion message appears. Expected first-run time is about 10–15 minutes if the regional vistas are sampled.
+At launch, choose either **Signal Grove • Story World** or **Lumen Wilds • UE5 Tech Demo**. Signal Grove retains the sanctuary objective: stabilize the three amber Waystones and return the signal to the central sanctuary. Lumen Wilds is a free-exploration environment showcase built for walking and developer-mode flight.
 
 ## Launch
 
@@ -21,6 +21,10 @@ For the standalone Development build, run `./Scripts/Package.ps1`, then launch `
 | Stabilize Waystone | E | Left face button |
 | Open/close menu | Escape | Menu/Start button |
 | Diagnostics | F3 | — |
+| Toggle developer mode | F8 | — |
+| Toggle developer flight | F9 | — |
+| Ascend while flying | Space | Bottom face button |
+| Descend while flying | Left Control | Right face button |
 | Navigate menu | Mouse or arrow keys + Enter | Left stick/D-pad + bottom face button |
 | Exit standalone build | Menu → Quit to Desktop | Menu → Quit to Desktop |
 
@@ -41,6 +45,22 @@ Open **Graphics & Display** from either the launch menu or pause menu. Display c
 7. Open the menu, disable a few individual effects, apply, and confirm the world changes. Relaunch to verify the saved values return; then use **Restore Recommended** and apply it.
 8. Use **Quit to Desktop** and confirm the standalone build exits cleanly without Alt+F4.
 
+## Level selection and developer mode
+
+1. Launch a fresh process and confirm the home menu names both Signal Grove and Lumen Wilds before gameplay begins.
+2. Select Signal Grove, reopen the pause menu, and switch to Lumen Wilds. Confirm map travel completes without reopening the initial selector.
+3. Press `F8`. The magenta developer banner must report `INVINCIBLE` and `4.2K SPEED`; incoming damage must resolve to zero.
+4. Press `F9`. The banner must also report `FLIGHT`. Look upward and move forward to confirm camera-relative ascent, use Space/Control for vertical movement, and hold Shift for the maximum flight speed.
+5. Disable flight with `F9`, then disable developer mode with `F8`. Normal walking/sprint tuning and damage behavior must return.
+
+## Lumen Wilds visual checks
+
+1. From the approach, confirm the moss terrain is continuous, the path remains navigable, and dense textured oak layers lead toward the lake.
+2. Fly to the lake. Confirm its irregular shoreline has no cylindrical side wall or grid tiling, and the creek/waterfall meets the basin cleanly.
+3. Inspect bark, branch, and leaf-card detail at walking distance; distant instances should cull without breaking the forest silhouette.
+4. Fly above the canopy and check terrain ridges, scattered rock formations, fallen logs, grass/ferns, volumetric atmosphere, cloud shadows, and the lake reflection as one coherent composition.
+5. Disable **Foliage Geometry** in Graphics & Display. Trees and ground vegetation must hide together; restoring the setting must rebuild the full view.
+
 ## Regional exploration checks
 
 1. **Center — town:** the sanctuary sits in an open paved plaza, surrounded by a readable ring of small buildings and street lamps. The main roads remain unobstructed. Look east for the pier and lighthouse.
@@ -50,11 +70,11 @@ Open **Graphics & Display** from either the launch menu or pause menu. Display c
 5. **South — tropics:** canopy becomes broader, taller, denser, and more saturated with heavier understory. Southeast should pick up coastal moisture and water colors naturally.
 6. Toggle `F3` while crossing each boundary. The dominant region, ground height, water depth, temperature, and moisture should change plausibly without discontinuities.
 
-## Known v0.3 limits
+## Known v0.4 limits
 
 - No save/load: objective progress resets when the session ends.
 - No audio, characters, combat, inventory, quests, input rebinding, map, or accessibility UI yet.
-- Environment geometry intentionally uses engine primitives and procedural instances; building kits, crops, terrain dressing, and landmark art remain foundation-quality.
+- Signal Grove intentionally retains its low-poly foundation. Lumen Wilds uses detailed bundled UE tree/rock assets and a photographic terrain layer, but it is a compact procedural showcase rather than a Quixel/Megascans production biome.
 - The ocean is currently a visual/lighting foundation without swimming, buoyancy, waves, or water gameplay. The pier provides a safe authored approach to it.
 - The HUD is Canvas-based. The menu supports mouse, keyboard, and gamepad navigation, but gameplay prompts are not input-device adaptive.
 - World Partition and HISM are established for scale, while the current playable footprint remains a compact vertical slice.

@@ -1,8 +1,8 @@
 # UEGT1
 
-UEGT1 is the Unreal Engine 5.8 C++ project for **Signal Grove**, a first-person low-poly open-region foundation targeting Win64, DirectX 12, and Shader Model 6.
+UEGT1 is an Unreal Engine 5.8 C++ first-person project targeting Win64, DirectX 12, and Shader Model 6. Its launch menu offers two worlds: **Signal Grove**, the playable low-poly open-region adventure, and **Lumen Wilds**, a separate UE5 real-time environment showcase.
 
-The v0.3 starting region is playable and built for expansion: a small sanctuary town anchors a 352 m square deterministic region, with an eastern oceanfront, western farms, northern mountains, and southern tropical forest blended through continuous biome, elevation, moisture, and temperature fields. The original three Waystone paths remain playable. A launch/pause menu provides persistent display, quality, and per-feature graphics controls plus an in-game quit path. The checked-in map uses World Partition, One File Per Actor, HLOD layers, Lumen, Virtual Shadow Maps, volumetric atmosphere, and hierarchical instancing instead of one Actor per prop.
+The v0.4 build keeps Signal Grove's 352 m deterministic region, sanctuary objective, World Partition infrastructure, and graphics controls, and adds level selection plus a persistent developer mode. Lumen Wilds is a 360 m procedural valley with photographic moss terrain, detailed textured oaks, instanced rock/ground dressing, an irregular lake, creek, waterfall, atmospheric lighting, Lumen, and Virtual Shadow Maps. Press `F8` for invincibility and fast traversal, then `F9` for flight; the menu exposes the same switches.
 
 ## Requirements
 
@@ -44,4 +44,4 @@ Common individual commands:
 
 Generated folders, IDE state, test reports, logs, local builds, and secrets are intentionally ignored. Keep Unreal source assets (`Content/**/*.uasset` and `Content/**/*.umap`) under Git when they are intentional project content.
 
-See [the architecture guide](Docs/Architecture.md) for system boundaries, [the regional authoring guide](Docs/Region-Authoring.md) for generation and expansion contracts, and [the playtest guide](Docs/Playtest-0.1.md) for controls, exploration checks, graphics settings, and known limits.
+See [the architecture guide](Docs/Architecture.md) for system boundaries, [the Lumen Wilds guide](Docs/Lumen-Wilds.md) for showcase authoring and verification, [the regional authoring guide](Docs/Region-Authoring.md) for Signal Grove's generation contract, and [the playtest guide](Docs/Playtest-0.1.md) for controls and acceptance checks.

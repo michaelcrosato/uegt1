@@ -19,6 +19,7 @@ try {
     & (Join-Path $PSScriptRoot 'Build.ps1') -EngineRoot $resolvedEngine
     if (-not $SkipContent) {
         & (Join-Path $PSScriptRoot 'Create-InitialContent.ps1') -EngineRoot $resolvedEngine
+        & (Join-Path $PSScriptRoot 'Create-TechDemoContent.ps1') -EngineRoot $resolvedEngine
     }
     if (-not $SkipTests) {
         & (Join-Path $PSScriptRoot 'Test.ps1') -EngineRoot $resolvedEngine -SkipBuild

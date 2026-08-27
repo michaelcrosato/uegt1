@@ -4,6 +4,7 @@
 #include "Engine/Engine.h"
 #include "Gameplay/UEGT1MilestoneGameState.h"
 #include "Interaction/UEGT1InteractionComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/UEGT1ExplorerCharacter.h"
 #include "Player/UEGT1PlayerController.h"
 #include "World/UEGT1Palette.h"
@@ -25,6 +26,7 @@ void AUEGT1HUD::DrawHUD()
 	const float ScreenWidth = Canvas->ClipX;
 	const float ScreenHeight = Canvas->ClipY;
 	DrawObjectivePanel(ScreenWidth, ScreenHeight);
+	DrawDeveloperModePanel(ScreenWidth, ScreenHeight);
 	DrawInteractionPrompt(ScreenWidth, ScreenHeight);
 	DrawCrosshair(ScreenWidth, ScreenHeight);
 	if (bShowDiagnostics)
@@ -35,26 +37,27 @@ void AUEGT1HUD::DrawHUD()
 
 void AUEGT1HUD::DrawObjectivePanel(float ScreenWidth, float ScreenHeight)
 {
+	const bool bTechDemo = UGameplayStatics::GetCurrentLevelName(GetWorld(), true).Contains(TEXT("TechDemo"));
 	const AUEGT1MilestoneGameState* State = GetWorld()->GetGameState<AUEGT1MilestoneGameState>();
 	const int32 Activated = State ? State->GetActivatedCount() : 0;
 	const int32 Total = State ? State->GetTotalCount() : 3;
 	const bool bComplete = State && State->IsMilestoneComplete();
 
-	DrawRect(UEGT1Palette::Ink, 30.0f, 28.0f, 370.0f, 105.0f);
+	DrawRect(UEGT1Palette::Ink, 30.0f, 28.0f, bTechDemo ? 430.0f : 370.0f, 105.0f);
 	DrawRect(bComplete ? UEGT1Palette::Signal : UEGT1Palette::Amber, 30.0f, 28.0f, 6.0f, 105.0f);
-	DrawText(TEXT("SIGNAL GROVE"), UEGT1Palette::Paper, 52.0f, 43.0f, GEngine->GetMediumFont(), 1.0f, false);
-	DrawText(bComplete ? TEXT("Sanctuary restored") : TEXT("Restore the three Waystones"),
+	DrawText(bTechDemo ? TEXT("LUMEN WILDS") : TEXT("SIGNAL GROVE"), UEGT1Palette::Paper, 52.0f, 43.0f, GEngine->GetMediumFont(), 1.0f, false);
+	DrawText(bTechDemo ? TEXT("UE5 real-time environment showcase") : (bComplete ? TEXT("Sanctuary restored") : TEXT("Restore the three Waystones")),
 		bComplete ? UEGT1Palette::Signal : UEGT1Palette::Paper, 52.0f, 75.0f, GEngine->GetSmallFont(), 1.05f, false);
-	DrawText(FString::Printf(TEXT("SIGNALS  %d / %d"), Activated, FMath::Max(Total, 3)),
+	DrawText(bTechDemo ? TEXT("EXPLORE  •  FLY  •  INSPECT") : FString::Printf(TEXT("SIGNALS  %d / %d"), Activated, FMath::Max(Total, 3)),
 		bComplete ? UEGT1Palette::Signal : UEGT1Palette::Amber, 52.0f, 101.0f, GEngine->GetSmallFont(), 0.9f, false);
 
 	if (GetWorld()->GetTimeSeconds() < 12.0f)
 	{
-		DrawText(TEXT("WASD move   MOUSE look   SHIFT sprint   SPACE jump   E interact   ESC menu   F3 diagnostics"),
+		DrawText(TEXT("WASD move   SHIFT sprint   SPACE jump/up   CTRL down   F8 dev mode   F9 flight   ESC menu   F3 diagnostics"),
 			FLinearColor(0.72f, 0.82f, 0.73f, 0.95f), 32.0f, ScreenHeight - 42.0f, GEngine->GetSmallFont(), 0.85f, false);
 	}
 
-	if (bComplete)
+	if (bComplete && !bTechDemo)
 	{
 		const FString CompletionText = TEXT("THE GROVE ANSWERS");
 		float TextWidth = 0.0f;
@@ -63,6 +66,25 @@ void AUEGT1HUD::DrawObjectivePanel(float ScreenWidth, float ScreenHeight)
 		DrawRect(FLinearColor(0.01f, 0.08f, 0.075f, 0.86f), ScreenWidth * 0.5f - 260.0f, 70.0f, 520.0f, 62.0f);
 		DrawText(CompletionText, UEGT1Palette::Signal, ScreenWidth * 0.5f - TextWidth * 0.5f, 83.0f, GEngine->GetLargeFont(), 1.0f, false);
 	}
+}
+
+void AUEGT1HUD::DrawDeveloperModePanel(float ScreenWidth, float ScreenHeight)
+{
+	const AUEGT1ExplorerCharacter* Character = Cast<AUEGT1ExplorerCharacter>(GetOwningPawn());
+	if (!Character || !Character->IsDeveloperModeEnabled())
+	{
+		return;
+	}
+
+	const FString State = Character->IsDeveloperFlying()
+		? TEXT("DEV MODE  •  INVINCIBLE  •  4.2K SPEED  •  FLIGHT")
+		: TEXT("DEV MODE  •  INVINCIBLE  •  4.2K SPEED  •  F9 TO FLY");
+	float Width = 0.0f;
+	float Height = 0.0f;
+	GetTextSize(State, Width, Height, GEngine->GetSmallFont(), 0.9f);
+	DrawRect(FLinearColor(0.12f, 0.015f, 0.04f, 0.90f), ScreenWidth * 0.5f - Width * 0.5f - 18.0f, 28.0f, Width + 36.0f, 34.0f);
+	DrawRect(FLinearColor(1.0f, 0.15f, 0.35f, 1.0f), ScreenWidth * 0.5f - Width * 0.5f - 18.0f, 28.0f, 5.0f, 34.0f);
+	DrawText(State, FLinearColor(1.0f, 0.72f, 0.77f, 1.0f), ScreenWidth * 0.5f - Width * 0.5f, 37.0f, GEngine->GetSmallFont(), 0.9f, false);
 }
 
 void AUEGT1HUD::DrawInteractionPrompt(float ScreenWidth, float ScreenHeight)

@@ -11,6 +11,14 @@ namespace
 	{
 		switch (Style)
 		{
+		case EUEGT1VisualMaterial::TechTerrain:
+			return TEXT("/Game/Materials/M_TechTerrain.M_TechTerrain");
+		case EUEGT1VisualMaterial::TechSurface:
+			return TEXT("/Game/Materials/M_TechSurface.M_TechSurface");
+		case EUEGT1VisualMaterial::TechFoliage:
+			return TEXT("/Game/Materials/M_TechFoliage.M_TechFoliage");
+		case EUEGT1VisualMaterial::TechWater:
+			return TEXT("/Game/Materials/M_TechWater.M_TechWater");
 		case EUEGT1VisualMaterial::Water:
 			return TEXT("/Game/Materials/M_SignalWater.M_SignalWater");
 		case EUEGT1VisualMaterial::Glow:

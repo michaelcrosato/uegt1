@@ -28,6 +28,8 @@ $runtimeLog = Join-Path $logFolder 'SignalGrove-PackagedSmoke.log'
 $screenshot = Join-Path $screenshotFolder 'SignalGrove-PackagedSmoke.png'
 $menuLog = Join-Path $logFolder 'SignalGrove-MenuSmoke.log'
 $menuScreenshot = Join-Path $screenshotFolder 'SignalGrove-MenuSmoke.png'
+$levelMenuLog = Join-Path $logFolder 'SignalGrove-LevelMenuSmoke.log'
+$levelMenuScreenshot = Join-Path $screenshotFolder 'SignalGrove-LevelMenuSmoke.png'
 $regionLog = Join-Path $logFolder 'SignalGrove-RegionSmoke.log'
 $regionScreenshotFolder = Join-Path $screenshotFolder 'Region'
 $regionScreenshots = @(
@@ -37,8 +39,16 @@ $regionScreenshots = @(
     (Join-Path $regionScreenshotFolder '04-NorthHighlands.png'),
     (Join-Path $regionScreenshotFolder '05-SouthTropics.png')
 )
+$techDemoLog = Join-Path $logFolder 'LumenWilds-PackagedSmoke.log'
+$techDemoScreenshotFolder = Join-Path $screenshotFolder 'LumenWilds'
+$techDemoScreenshots = @(
+    (Join-Path $techDemoScreenshotFolder '01-ValleyApproach.png'),
+    (Join-Path $techDemoScreenshotFolder '02-LakeOverlook.png'),
+    (Join-Path $techDemoScreenshotFolder '03-CanopyFlight.png')
+)
 New-Item -ItemType Directory -Path $regionScreenshotFolder -Force | Out-Null
-foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot, $regionLog) + $regionScreenshots) {
+New-Item -ItemType Directory -Path $techDemoScreenshotFolder -Force | Out-Null
+foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot, $levelMenuLog, $levelMenuScreenshot, $regionLog, $techDemoLog) + $regionScreenshots + $techDemoScreenshots) {
     if (Test-Path -LiteralPath $oldArtifact) {
         Remove-Item -LiteralPath $oldArtifact -Force
     }
@@ -185,6 +195,40 @@ Write-Host "Menu log: $menuLog"
 Write-Host "Menu screenshot: $menuScreenshot"
 Write-Host "Persisted settings: $($settingsFile.FullName)"
 
+$levelMenuArguments = @(
+    '-RenderOffscreen',
+    '-Windowed',
+    '-ResX=1920',
+    '-ResY=1080',
+    '-unattended',
+    '-nosplash',
+    "-UEGT1LevelMenuCapture=$levelMenuScreenshot",
+    "-abslog=$levelMenuLog"
+)
+Write-Host 'Running rendered level-selection menu smoke'
+$levelMenuProcess = Start-Process -FilePath $Executable -ArgumentList $levelMenuArguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Hidden -PassThru
+if (-not $levelMenuProcess.WaitForExit($TimeoutSeconds * 1000)) {
+    Stop-Process -Id $levelMenuProcess.Id -Force
+    throw "Packaged level-selection menu did not finish within $TimeoutSeconds seconds."
+}
+if ($levelMenuProcess.ExitCode -ne 0 -or
+    -not (Test-Path -LiteralPath $levelMenuLog -PathType Leaf) -or
+    -not (Test-Path -LiteralPath $levelMenuScreenshot -PathType Leaf)) {
+    throw "Packaged level-selection menu smoke failed. Inspect $levelMenuLog."
+}
+$levelMenuLogText = Get-Content -LiteralPath $levelMenuLog -Raw
+foreach ($signal in @(
+    'Game menu opened: Initial=true',
+    'Automated level-selection menu screenshot requested:',
+    'Menu quit requested; exiting to desktop.'
+)) {
+    if (-not $levelMenuLogText.Contains($signal)) {
+        throw "Packaged level-selection menu smoke is missing expected log signal: $signal"
+    }
+}
+Write-Host 'Packaged level-selection menu smoke passed: initial menu rendered with deterministic quit behavior.'
+Write-Host "Level-selection screenshot: $levelMenuScreenshot"
+
 $regionArguments = @(
     '-RenderOffscreen',
     '-Windowed',
@@ -231,3 +275,56 @@ if ($regionLogText.Contains('missing usage flag') -or $regionLogText.Contains('D
 Write-Host 'Packaged regional smoke passed: town, waterfront, farmland, highlands, and tropics rendered from deterministic viewpoints.'
 Write-Host "Regional log: $regionLog"
 Write-Host "Regional screenshots: $regionScreenshotFolder"
+
+$techDemoArguments = @(
+    '-RenderOffscreen',
+    '-Windowed',
+    '-ResX=1920',
+    '-ResY=1080',
+    '-unattended',
+    '-nosplash',
+    '-UEGT1SmokeResetSettings',
+    '-UEGT1SmokeSelectTechDemo',
+    '-UEGT1DevMode',
+    '-UEGT1DevFlight',
+    "-UEGT1TechDemoCaptureFolder=$techDemoScreenshotFolder",
+    "-abslog=$techDemoLog"
+)
+Write-Host 'Running menu-travel, developer-mode, and three-view Lumen Wilds smoke'
+$techDemoProcess = Start-Process -FilePath $Executable -ArgumentList $techDemoArguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Hidden -PassThru
+if (-not $techDemoProcess.WaitForExit($TimeoutSeconds * 1000)) {
+    Stop-Process -Id $techDemoProcess.Id -Force
+    throw "Packaged Lumen Wilds smoke did not finish within $TimeoutSeconds seconds."
+}
+if ($techDemoProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $techDemoLog -PathType Leaf)) {
+    throw "Packaged Lumen Wilds smoke failed with exit code $($techDemoProcess.ExitCode). Inspect $techDemoLog."
+}
+foreach ($techDemoScreenshot in $techDemoScreenshots) {
+    if (-not (Test-Path -LiteralPath $techDemoScreenshot -PathType Leaf)) {
+        throw "Packaged Lumen Wilds smoke did not create $techDemoScreenshot."
+    }
+}
+$techDemoLogText = Get-Content -LiteralPath $techDemoLog -Raw
+foreach ($signal in @(
+    'Developer mode initialized: Invincible=true FastTravel=true Flight=true',
+    'Automated menu travel to Lumen Wilds scheduled.',
+    'Game menu opened: Initial=true',
+    'Level selected from menu: TechDemo',
+    'Lumen Wilds showcase ready: TerrainVertices=16641',
+    'Automated Lumen Wilds screenshot requested: View=ValleyApproach',
+    'Automated Lumen Wilds screenshot requested: View=LakeOverlook',
+    'Automated Lumen Wilds screenshot requested: View=CanopyFlight',
+    'Automated gameplay smoke completed.'
+)) {
+    if (-not $techDemoLogText.Contains($signal)) {
+        throw "Packaged Lumen Wilds smoke is missing expected log signal: $signal"
+    }
+}
+if ($techDemoLogText.Contains('No authored biome tiles found') -or
+    $techDemoLogText.Contains('missing usage flag') -or
+    $techDemoLogText.Contains('Default Material will be used in game')) {
+    throw 'Packaged Lumen Wilds smoke used a fallback world or substituted default materials.'
+}
+Write-Host 'Packaged Lumen Wilds smoke passed: menu travel, invincibility/fast-flight state, terrain load, and three rendered views verified.'
+Write-Host "Lumen Wilds log: $techDemoLog"
+Write-Host "Lumen Wilds screenshots: $techDemoScreenshotFolder"

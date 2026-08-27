@@ -14,16 +14,30 @@ $requiredFiles = @(
     'Config\DefaultGameUserSettings.ini',
     'Config\DefaultInput.ini',
     'Content\Maps\Main.umap',
+    'Content\Maps\TechDemo.umap',
+    'Content\ArchVis\SampleScene\Tree\HillTree_02.uasset',
+    'Content\ArchVis\SampleScene\Tree\Materials\M_HillTree_01_Leaves.uasset',
+    'Content\ArchVis\SampleScene\Tree\Textures\T_HillTree_01_Atlas.uasset',
+    'Content\SimSandbox\Meshes\Rock.uasset',
+    'Content\SimSandbox\Materials\MI_PrototypeGrid_TopBlue.uasset',
     'Content\Materials\M_SignalGlow.uasset',
     'Content\Materials\M_SignalSurface.uasset',
     'Content\Materials\M_SignalWater.uasset',
+    'Content\Materials\M_TechFoliage.uasset',
+    'Content\Materials\M_TechSurface.uasset',
+    'Content\Materials\M_TechTerrain.uasset',
+    'Content\Materials\M_TechWater.uasset',
     'Docs\Architecture.md',
+    'Docs\Lumen-Wilds.md',
     'Docs\Playtest-0.1.md',
     'Docs\Region-Authoring.md',
     'Source\UEGT1.Target.cs',
     'Source\UEGT1Editor.Target.cs',
     'Source\UEGT1\UEGT1.Build.cs',
     'Source\UEGT1\Public\Settings\UEGT1GameUserSettings.h',
+    'Source\UEGT1\Public\Development\UEGT1DeveloperModeSubsystem.h',
+    'Source\UEGT1\Public\Gameplay\UEGT1SessionSubsystem.h',
+    'Source\UEGT1\Public\World\UEGT1TechDemoEnvironment.h',
     'Source\UEGT1\Public\World\UEGT1RegionSettings.h',
     'Source\UEGT1\Public\World\UEGT1RegionTypes.h',
     'Source\UEGT1\Public\World\UEGT1Town.h',
@@ -32,11 +46,15 @@ $requiredFiles = @(
     'Source\UEGT1\Private\World\UEGT1RegionTypes.cpp',
     'Source\UEGT1\Private\World\UEGT1Town.cpp',
     'Source\UEGT1\Private\World\UEGT1VisualMaterials.cpp',
+    'Source\UEGT1\Private\Development\UEGT1DeveloperModeSubsystem.cpp',
+    'Source\UEGT1\Private\World\UEGT1TechDemoEnvironment.cpp',
     'Source\UEGT1\Private\World\UEGT1WorldLayout.cpp',
     'Source\UEGT1\Private\Settings\UEGT1GameUserSettings.cpp',
     'Source\UEGT1\Private\UI\SUEGT1Menu.h',
     'Source\UEGT1\Private\UI\SUEGT1Menu.cpp',
     'Scripts\Build.ps1',
+    'Scripts\Create-TechDemoContent.ps1',
+    'Scripts\CreateTechDemoContent.py',
     'Scripts\Package.ps1',
     'Scripts\Smoke-Gameplay.ps1',
     'Scripts\Smoke-PackagedBuild.ps1',
@@ -56,6 +74,9 @@ if ($project.EngineAssociation -ne '5.8') {
 }
 if ('UEGT1' -notin $project.Modules.Name) {
     $errors.Add('UEGT1.uproject does not declare the UEGT1 runtime module.')
+}
+if ('ProceduralMeshComponent' -notin $project.Plugins.Name) {
+    $errors.Add('UEGT1.uproject must enable ProceduralMeshComponent for the Lumen Wilds collision terrain.')
 }
 
 $engineConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultEngine.ini') -Raw
@@ -81,6 +102,11 @@ if ($inputConfig -notmatch 'ActionName="PauseMenu"[^\r\n]*Key=Escape' -or
     $inputConfig -notmatch 'ActionName="PauseMenu"[^\r\n]*Key=Gamepad_Special_Right') {
     $errors.Add('DefaultInput.ini must bind the game menu to Escape and the gamepad Menu/Start button.')
 }
+if ($inputConfig -notmatch 'ActionName="ToggleDeveloperMode"[^\r\n]*Key=F8' -or
+    $inputConfig -notmatch 'ActionName="ToggleDeveloperFlight"[^\r\n]*Key=F9' -or
+    $inputConfig -notmatch 'ActionName="DeveloperDescend"[^\r\n]*Key=LeftControl') {
+    $errors.Add('DefaultInput.ini must bind the complete F8/F9 developer movement controls.')
+}
 
 $settingsConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultGameUserSettings.ini') -Raw
 if ($settingsConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1GameUserSettings\]\r?$' -or
@@ -98,6 +124,12 @@ if ($gameConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1RegionSettings\]\r?$' -or
 }
 if ($gameConfig -notmatch '(?m)^\+DirectoriesToAlwaysCook=\(Path="/Game/Materials"\)\r?$') {
     $errors.Add('DefaultGame.ini must cook the authored Signal Grove materials used by runtime-generated instances.')
+}
+foreach ($map in @('Main', 'TechDemo')) {
+    $mapPattern = '(?m)^\+MapsToCook=\(FilePath="/Game/Maps/{0}"\)\r?$' -f $map
+    if ($gameConfig -notmatch $mapPattern) {
+        $errors.Add("DefaultGame.ini must explicitly cook /Game/Maps/$map for menu travel.")
+    }
 }
 
 $externalActorFolder = Join-Path $projectRoot 'Content\__ExternalActors__\Maps\Main'
