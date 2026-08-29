@@ -25,8 +25,13 @@ $logText = Get-Content -LiteralPath $runtimeLog -Raw
 $requiredSignals = @(
     'Game Engine Initialized.',
     'LoadMap: /Game/Maps/Main',
-    'Regional foundation ready: Seed=7319 Tiles=121 Expected=121',
-    'Town foundation ready: Buildings=',
+    'Regional foundation ready: Seed=7319 Tiles=154 Expected=154',
+	'Town foundation ready: Buildings=49',
+	'Interiors=49 ActivityStations=102',
+	'Venues=52 Streets=18 Beds=100',
+	'Town simulation ready: Seed=7319 NPCs=100 Spawned=100 Venues=52 Jobs=20 Beds=100 AssignedBeds=100 RelatedHouseholds=100',
+	'Day/night phase: Dawn',
+	'Day/night lighting ownership: DirectionalLights=1 SkyLights=1 Sun=DirectionalLight',
     'Waystone registered: Id=EastRise',
     'Waystone registered: Id=WestHollow',
     'Waystone registered: Id=SouthWatch'
@@ -43,5 +48,5 @@ if ($logText.Contains('No authored town found') -or $logText.Contains('Regional 
     throw 'Gameplay smoke did not load the complete authored town and regional tile coverage.'
 }
 
-Write-Host "Gameplay smoke passed: authored 121-tile regional World Partition, town, and all three Waystones loaded."
+Write-Host "Gameplay smoke passed: authored 154-tile west-expanded World Partition, 100-resident town, and all three Waystones loaded."
 Write-Host "Runtime log: $runtimeLog"

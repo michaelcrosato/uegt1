@@ -1,4 +1,4 @@
-# UEGT1 v0.4 playtest
+# UEGT1 v0.5 playtest
 
 ## Goal
 
@@ -19,6 +19,7 @@ For the standalone Development build, run `./Scripts/Package.ps1`, then launch `
 | Jump | Space | Bottom face button |
 | Sprint | Left Shift | Left stick click |
 | Stabilize Waystone | E | Left face button |
+| Open/close world map | M | View/Back button |
 | Open/close menu | Escape | Menu/Start button |
 | Diagnostics | F3 | — |
 | Toggle developer mode | F8 | — |
@@ -42,8 +43,10 @@ Open **Graphics & Display** from either the launch menu or pause menu. Display c
 4. Activating a Waystone changes its shards and light from amber to teal and increments the HUD counter exactly once.
 5. After the third activation, the central sanctuary brightens and accelerates, and the HUD reports completion.
 6. `F3` shows a plausible frame rate and position. Look for hitches, shadow instability, obvious instance pop, gaps at tile edges, or places where foliage blocks a reserved trail.
-7. Open the menu, disable a few individual effects, apply, and confirm the world changes. Relaunch to verify the saved values return; then use **Restore Recommended** and apply it.
-8. Use **Quit to Desktop** and confirm the standalone build exits cleanly without Alt+F4.
+7. Press `M`. Confirm the map covers the complete region; shows terrain regions, connected town streets, all residence dots, all numbered services/parks, Waystones and trails, Sanctuary, and an accurate live `YOU` marker. Press `M` or Escape to close it.
+8. Observe sunrise, noon, sunset, and night. The sun must cross the sky instead of rotating in place; warm horizons should lead to bright noon, and midnight must be genuinely dark while interior lamps and signals remain readable.
+9. Open the menu, disable a few individual effects, apply, and confirm the world changes. Relaunch to verify the saved values return; then use **Restore Recommended** and apply it.
+10. Use **Quit to Desktop** and confirm the standalone build exits cleanly without Alt+F4.
 
 ## Level selection and developer mode
 
@@ -63,20 +66,30 @@ Open **Graphics & Display** from either the launch menu or pause menu. Display c
 
 ## Regional exploration checks
 
-1. **Center — town:** the sanctuary sits in an open paved plaza, surrounded by a readable ring of small buildings and street lamps. The main roads remain unobstructed. Look east for the pier and lighthouse.
+1. **Center — town:** the sanctuary sits in an open paved plaza, surrounded by a readable cluster of small buildings and street lamps. The main roads remain unobstructed. Look east for the pier and lighthouse.
 2. **East — waterfront:** meadow gives way to sand and descending shoreline before a broad teal ocean surface. The pier carries the town silhouette into the water; northeast terrain should read as higher rocky coast rather than a hard biome seam.
-3. **West — countryside:** vegetation thins into rolling ochre/green fields with repeated crop rows. Farm and meadow colors should interleave through the transition instead of changing on one tile boundary.
+3. **West — town expansion and countryside:** follow the connected streets west through the long new district, then continue beyond it until buildings give way to rolling ochre/green fields. Farm and meadow colors should interleave through the transition instead of changing on one tile boundary.
 4. **North — mountains:** ground elevation rises continuously into darker rocky terrain, conifers, and large faceted peaks. The town should remain visible below from the first slopes.
 5. **South — tropics:** canopy becomes broader, taller, denser, and more saturated with heavier understory. Southeast should pick up coastal moisture and water colors naturally.
 6. Toggle `F3` while crossing each boundary. The dominant region, ground height, water depth, temperature, and moisture should change plausibly without discontinuities.
 
-## Known v0.4 limits
+## Town simulation checks
 
-- No save/load: objective progress resets when the session ends.
-- No audio, characters, combat, inventory, quests, input rebinding, map, or accessibility UI yet.
+1. In Signal Grove, confirm the inspector reports 100 residents and the westward town contains a visibly larger connected street/building footprint.
+2. Confirm residents leave homes and move continuously along the connected street grid rather than teleporting between samples or moving through buildings. At normal walk speed, the player should gradually overtake a citizen without sprinting.
+3. Inspect the sleeping porches around homes and confirm the generated bed-frame/bedding pairs total one per citizen. Press `F3`, then `F4` repeatedly and verify each inspected resident shows a unique bed ID belonging to its home.
+4. Verify each inspected resident also has identity, optional job, money, four needs, a schedule, a chosen action/destination, utility scores, and a replan reason.
+5. Observe morning work/food movement and evening sleep/social movement. The inspector clock and sun should advance together.
+6. Find a resident with low funds. Confirm it selects work, a free home meal, or the park instead of remaining stuck on an unaffordable action.
+7. Press `F5`, note the inspected resident, bed, and clock, wait for state to change, then press `F6`. Confirm the seed, time, resident location/action, bed assignment, money, and needs return.
+
+## Known v0.5 limits
+
+- Waystone objective progress still resets when the session ends; F5/F6 persistence currently covers the town simulation only.
+- No audio, characters, combat, inventory, quests, input rebinding, or accessibility UI yet. The world map is a static full-region overview without zoom, pan, filters, or custom waypoints.
 - Signal Grove intentionally retains its low-poly foundation. Lumen Wilds uses detailed bundled UE tree/rock assets and a photographic terrain layer, but it is a compact procedural showcase rather than a Quixel/Megascans production biome.
 - The ocean is currently a visual/lighting foundation without swimming, buoyancy, waves, or water gameplay. The pier provides a safe authored approach to it.
 - The HUD is Canvas-based. The menu supports mouse, keyboard, and gamepad navigation, but gameplay prompts are not input-device adaptive.
-- World Partition and HISM are established for scale, while the current playable footprint remains a compact vertical slice.
+- World Partition and HISM support the 154-tile region and 100-resident town; deeper interiors and district-specific gameplay remain future work.
 
 Record the hardware, average frame rate, completion time, any stuck locations, and the first moment navigation became unclear. Those observations should drive the next milestone more than raw content volume.

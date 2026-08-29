@@ -20,6 +20,21 @@ public:
 	static int32 GetRegionTileRadius();
 
 	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")
+	static int32 GetRegionMinTileX();
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")
+	static int32 GetRegionMaxTileX();
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")
+	static int32 GetRegionMinTileY();
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")
+	static int32 GetRegionMaxTileY();
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")
+	static int32 GetRegionExpectedTileCount();
+
+	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")
 	static float GetRegionTileSize();
 
 	UFUNCTION(BlueprintPure, Category = "UEGT1|Editor")

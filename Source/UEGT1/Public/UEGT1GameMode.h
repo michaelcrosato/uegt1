@@ -17,6 +17,10 @@ public:
 
 private:
 	void CaptureAutomatedSmokeFrame();
+	void PrepareAutomatedWorldState();
+	void PositionAutomatedEnvironmentView();
+	void CaptureAutomatedEnvironmentFrame();
+	void PositionAutomatedResidentView();
 	void CaptureAutomatedMenuFrame();
 	void CaptureAutomatedLevelMenuFrame();
 	void SelectAutomatedTechDemo();
@@ -32,9 +36,14 @@ private:
 	FString AutomatedLevelMenuCapturePath;
 	FString AutomatedRegionCaptureFolder;
 	FString AutomatedTechDemoCaptureFolder;
+	FString AutomatedEnvironmentCaptureFolder;
 	int32 AutomatedRegionCaptureIndex = 0;
 	int32 AutomatedTechDemoCaptureIndex = 0;
+	int32 AutomatedEnvironmentCaptureIndex = 0;
 	FTimerHandle CaptureTimerHandle;
+	FTimerHandle ResidentViewTimerHandle;
+	FTimerHandle WorldStateTimerHandle;
+	FTimerHandle EnvironmentCaptureTimerHandle;
 	FTimerHandle MenuCaptureTimerHandle;
 	FTimerHandle LevelMenuCaptureTimerHandle;
 	FTimerHandle LevelTravelTimerHandle;

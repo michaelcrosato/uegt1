@@ -40,11 +40,17 @@ void AUEGT1PlayerController::SetupInputComponent()
 	if (InputComponent)
 	{
 		InputComponent->BindAction(TEXT("PauseMenu"), IE_Pressed, this, &AUEGT1PlayerController::ToggleMenu);
+		InputComponent->BindAction(TEXT("ToggleWorldMap"), IE_Pressed, this, &AUEGT1PlayerController::ToggleWorldMap);
 	}
 }
 
 void AUEGT1PlayerController::ToggleMenu()
 {
+	if (bWorldMapOpen)
+	{
+		SetWorldMapOpen(false);
+		return;
+	}
 	if (IsMenuOpen())
 	{
 		CloseMenu();
@@ -61,6 +67,7 @@ void AUEGT1PlayerController::OpenMenu(bool bInitialMenu)
 	{
 		return;
 	}
+	SetWorldMapOpen(false);
 
 	SAssignNew(MenuWidget, SUEGT1Menu)
 		.OwnerController(this)
@@ -79,6 +86,35 @@ void AUEGT1PlayerController::OpenMenu(bool bInitialMenu)
 	SetInputMode(InputMode);
 	MenuWidget->SetInitialFocus();
 	UE_LOG(LogUEGT1, Display, TEXT("Game menu opened: Initial=%s"), bInitialMenu ? TEXT("true") : TEXT("false"));
+}
+
+void AUEGT1PlayerController::ToggleWorldMap()
+{
+	if (IsMenuOpen() || UGameplayStatics::GetCurrentLevelName(GetWorld(), true).Contains(TEXT("TechDemo")))
+	{
+		return;
+	}
+	SetWorldMapOpen(!bWorldMapOpen);
+}
+
+void AUEGT1PlayerController::SetWorldMapOpen(bool bOpen)
+{
+	if (bWorldMapOpen == bOpen)
+	{
+		return;
+	}
+	bWorldMapOpen = bOpen;
+	SetIgnoreMoveInput(bOpen);
+	SetIgnoreLookInput(bOpen);
+	UE_LOG(LogUEGT1, Display, TEXT("World map %s."), bWorldMapOpen ? TEXT("opened") : TEXT("closed"));
+}
+
+void AUEGT1PlayerController::OpenWorldMapForAutomation()
+{
+	if (!bWorldMapOpen)
+	{
+		SetWorldMapOpen(true);
+	}
 }
 
 void AUEGT1PlayerController::CloseMenu()
@@ -143,6 +179,7 @@ void AUEGT1PlayerController::TravelToLevel(FName LevelName)
 	{
 		CloseMenu();
 	}
+	SetWorldMapOpen(false);
 	UE_LOG(LogUEGT1, Display, TEXT("Level selected from menu: %s"), *LevelName.ToString());
 	UGameplayStatics::OpenLevel(this, LevelName);
 }

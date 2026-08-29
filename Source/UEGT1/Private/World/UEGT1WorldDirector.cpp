@@ -56,10 +56,9 @@ void AUEGT1WorldDirector::EnsureBiomeTiles()
 	}
 
 	UE_LOG(LogUEGT1, Warning, TEXT("No authored biome tiles found; generating runtime fallback tiles."));
-	const int32 Radius = UEGT1WorldLayout::GetTileRadius();
-	for (int32 Y = -Radius; Y <= Radius; ++Y)
+	for (int32 Y = UEGT1WorldLayout::GetMinTileY(); Y <= UEGT1WorldLayout::GetMaxTileY(); ++Y)
 	{
-		for (int32 X = -Radius; X <= Radius; ++X)
+		for (int32 X = UEGT1WorldLayout::GetMinTileX(); X <= UEGT1WorldLayout::GetMaxTileX(); ++X)
 		{
 			AUEGT1BiomeTile* Tile = GetWorld()->SpawnActor<AUEGT1BiomeTile>(AUEGT1BiomeTile::StaticClass(), FTransform::Identity);
 			Tile->InitializeTile(FIntPoint(X, Y), UEGT1WorldLayout::GetWorldSeed());

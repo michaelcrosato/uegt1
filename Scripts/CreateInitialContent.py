@@ -195,15 +195,18 @@ def create_gameplay_actors(actor_subsystem):
         waystone.initialize_waystone(waystone_id)
 
     world_seed = unreal.UEGT1EditorAuthoringLibrary.get_region_world_seed()
-    tile_radius = unreal.UEGT1EditorAuthoringLibrary.get_region_tile_radius()
+    min_tile_x = unreal.UEGT1EditorAuthoringLibrary.get_region_min_tile_x()
+    max_tile_x = unreal.UEGT1EditorAuthoringLibrary.get_region_max_tile_x()
+    min_tile_y = unreal.UEGT1EditorAuthoringLibrary.get_region_min_tile_y()
+    max_tile_y = unreal.UEGT1EditorAuthoringLibrary.get_region_max_tile_y()
     tile_size = unreal.UEGT1EditorAuthoringLibrary.get_region_tile_size()
-    for tile_y in range(-tile_radius, tile_radius + 1):
-        for tile_x in range(-tile_radius, tile_radius + 1):
+    for tile_y in range(min_tile_y, max_tile_y + 1):
+        for tile_x in range(min_tile_x, max_tile_x + 1):
             location = unreal.Vector(tile_x * tile_size, tile_y * tile_size, 0.0)
             tile = spawn_actor(actor_subsystem, biome_tile_class, location, f"Biome Tile {tile_x:+d} {tile_y:+d}")
             tile.initialize_tile(unreal.IntPoint(tile_x, tile_y), world_seed)
 
-    return tile_radius
+    return unreal.UEGT1EditorAuthoringLibrary.get_region_expected_tile_count()
 
 
 def main():
@@ -223,7 +226,7 @@ def main():
     elif not level_subsystem.new_level(MAP_PATH):
         raise RuntimeError(f"Unable to create {MAP_PATH}")
 
-    tile_radius = create_gameplay_actors(actor_subsystem)
+    tile_count = create_gameplay_actors(actor_subsystem)
     configure_lighting(actor_subsystem)
 
     player_start = spawn_actor(actor_subsystem, unreal.PlayerStart, unreal.Vector(0.0, -1350.0, 110.0), "Signal Grove Player Start")
@@ -242,7 +245,7 @@ def main():
         raise RuntimeError(f"Unable to save {MAP_PATH}")
 
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
-    unreal.log(f"UEGT1 regional foundation authored at {MAP_PATH} with {(tile_radius * 2 + 1) ** 2} biome tiles")
+    unreal.log(f"UEGT1 regional foundation authored at {MAP_PATH} with {tile_count} biome tiles")
     unreal.log("UEGT1_CONTENT_GENERATION_SUCCEEDED")
 
 

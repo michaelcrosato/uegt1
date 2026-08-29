@@ -8,6 +8,7 @@
 #include "Engine/GameInstance.h"
 #include "GameFramework/PlayerController.h"
 #include "Interaction/UEGT1InteractionComponent.h"
+#include "Simulation/UEGT1TownSimulationSubsystem.h"
 #include "UI/UEGT1HUD.h"
 
 AUEGT1ExplorerCharacter::AUEGT1ExplorerCharacter()
@@ -90,6 +91,9 @@ void AUEGT1ExplorerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerI
 	PlayerInputComponent->BindAction(TEXT("Sprint"), IE_Released, this, &AUEGT1ExplorerCharacter::StopSprint);
 	PlayerInputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AUEGT1ExplorerCharacter::Interact);
 	PlayerInputComponent->BindAction(TEXT("ToggleDiagnostics"), IE_Pressed, this, &AUEGT1ExplorerCharacter::ToggleDiagnostics);
+	PlayerInputComponent->BindAction(TEXT("CycleSimulationInspector"), IE_Pressed, this, &AUEGT1ExplorerCharacter::CycleSimulationInspector);
+	PlayerInputComponent->BindAction(TEXT("SaveTownSimulation"), IE_Pressed, this, &AUEGT1ExplorerCharacter::SaveTownSimulation);
+	PlayerInputComponent->BindAction(TEXT("LoadTownSimulation"), IE_Pressed, this, &AUEGT1ExplorerCharacter::LoadTownSimulation);
 }
 
 void AUEGT1ExplorerCharacter::MoveForward(float Value)
@@ -231,5 +235,29 @@ void AUEGT1ExplorerCharacter::ToggleDiagnostics()
 	if (AUEGT1HUD* HUD = PlayerController ? Cast<AUEGT1HUD>(PlayerController->GetHUD()) : nullptr)
 	{
 		HUD->ToggleDiagnostics();
+	}
+}
+
+void AUEGT1ExplorerCharacter::CycleSimulationInspector()
+{
+	if (UUEGT1TownSimulationSubsystem* Simulation = GetWorld()->GetSubsystem<UUEGT1TownSimulationSubsystem>())
+	{
+		Simulation->CycleInspectedNPC();
+	}
+}
+
+void AUEGT1ExplorerCharacter::SaveTownSimulation()
+{
+	if (UUEGT1TownSimulationSubsystem* Simulation = GetWorld()->GetSubsystem<UUEGT1TownSimulationSubsystem>())
+	{
+		Simulation->SaveSimulation();
+	}
+}
+
+void AUEGT1ExplorerCharacter::LoadTownSimulation()
+{
+	if (UUEGT1TownSimulationSubsystem* Simulation = GetWorld()->GetSubsystem<UUEGT1TownSimulationSubsystem>())
+	{
+		Simulation->LoadSimulation();
 	}
 }

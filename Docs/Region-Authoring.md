@@ -12,7 +12,7 @@ This guide is the shortest reliable route for a future Codex session to understa
 | North | `+Y` | Highlands | rising faceted ground, rock, conifers, large peaks |
 | South | `-Y` | Tropics | broadleaf canopy, tall trees, dense saturated understory |
 
-The configured grid radius is 5 with 3,200 cm tiles, producing 121 tiles and a 35,200 cm square region. The seed is `7319`. Keep coordinates in world centimetres.
+The configured base grid radius is 5 with 3,200 cm tiles, plus three extra columns toward -X. This produces a 14×11, 154-tile region measuring 44,800 cm east/west by 35,200 cm north/south. The east, north, and south edges remain at their original coordinates; only the west edge expands. The seed is `7319`. Keep coordinates in world centimetres.
 
 ## Single source of truth
 
@@ -29,7 +29,7 @@ The sampler is deterministic and side-effect free. Editor authoring calls export
 
 `AUEGT1BiomeTile` is the repeatable regional unit. Each tile has separate HISM layers for terrain, routes, trunks, conifers, broadleaf canopy, rocks, grass, crops, water, wave accents, and mountain peaks. Terrain is a six-by-six set of rotated, overlapping box cells whose normals are derived from neighboring height samples. This produces walkable faceted slopes with a deliberate low-poly character.
 
-`AUEGT1Town` is an independent center module. Its generated lots are rejected when they overlap a primary Waystone route. Town roads, plaza, walls, roofs, trim, pier, street furniture, and lighthouse use ten HISM layers. Add districts or landmark actors as separate modules rather than adding special cases to biome tiles.
+`AUEGT1Town` is an independent center/west module. Its generated lots are rejected when they overlap a primary Waystone route. A westward town spine controls town-biome blending and procedural-clutter reservation. Town roads, plaza, walls, roofs, trim, 100 beds, pier, street furniture, and lighthouse use fourteen HISM layers. Add districts or landmark actors as separate modules rather than adding special cases to biome tiles.
 
 `AUEGT1WorldDirector` owns validation and fallback only. It must not become a per-frame generator or a container for biome rules.
 
@@ -47,11 +47,11 @@ The always-loaded lighting actors are also created by `CreateInitialContent.py`.
 2. Change sampling equations only in `UEGT1WorldLayout.cpp`; add a test for every new directional invariant.
 3. Change visual realization in `AUEGT1BiomeTile` or a dedicated landmark/district actor. Keep repeated geometry instanced.
 4. Build the editor target.
-5. Run `Scripts/Create-InitialContent.ps1 -Force` to recreate the checked-in materials and World Partition actors. A successful clean run reports three visual materials, 121 tiles, and no authoring errors.
+5. Run `Scripts/Create-InitialContent.ps1 -Force` to recreate the checked-in materials and World Partition actors. A successful clean run reports three visual materials, 154 tiles, and no authoring errors.
 6. Run `Scripts/Test.ps1` and `Scripts/Smoke-Gameplay.ps1`.
 7. Package and run `Scripts/Smoke-PackagedBuild.ps1`; inspect all five files in `Saved/Screenshots/Region` at original resolution.
 
-To expand the footprint, raise `TileRadius` and regenerate. To increase detail without expanding scale, add biome-specific HISM layers or authored World Partition actors. Do not increase Actor count per prop.
+To expand all four directions, raise `TileRadius`. To continue the current one-direction growth, raise `WestTileExtension`; keep `TownWestExtension` synchronized with the intended town footprint, then regenerate. To increase detail without expanding scale, add biome-specific HISM layers or authored World Partition actors. Do not increase Actor count per prop.
 
 ## Required invariants
 

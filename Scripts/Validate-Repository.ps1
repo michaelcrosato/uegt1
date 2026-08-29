@@ -31,10 +31,15 @@ $requiredFiles = @(
     'Docs\Lumen-Wilds.md',
     'Docs\Playtest-0.1.md',
     'Docs\Region-Authoring.md',
+	'Docs\Town-Simulation.md',
     'Source\UEGT1.Target.cs',
     'Source\UEGT1Editor.Target.cs',
     'Source\UEGT1\UEGT1.Build.cs',
     'Source\UEGT1\Public\Settings\UEGT1GameUserSettings.h',
+	'Source\UEGT1\Public\Simulation\UEGT1TownSimulationModel.h',
+	'Source\UEGT1\Public\Simulation\UEGT1TownSimulationSettings.h',
+	'Source\UEGT1\Public\Simulation\UEGT1TownSimulationSubsystem.h',
+	'Source\UEGT1\Public\Simulation\UEGT1TownSimulationTypes.h',
     'Source\UEGT1\Public\Development\UEGT1DeveloperModeSubsystem.h',
     'Source\UEGT1\Public\Gameplay\UEGT1SessionSubsystem.h',
     'Source\UEGT1\Public\World\UEGT1TechDemoEnvironment.h',
@@ -50,6 +55,9 @@ $requiredFiles = @(
     'Source\UEGT1\Private\World\UEGT1TechDemoEnvironment.cpp',
     'Source\UEGT1\Private\World\UEGT1WorldLayout.cpp',
     'Source\UEGT1\Private\Settings\UEGT1GameUserSettings.cpp',
+	'Source\UEGT1\Private\Simulation\UEGT1TownSimulationModel.cpp',
+	'Source\UEGT1\Private\Simulation\UEGT1TownSimulationSubsystem.cpp',
+	'Source\UEGT1\Private\Tests\UEGT1TownSimulationTest.cpp',
     'Source\UEGT1\Private\UI\SUEGT1Menu.h',
     'Source\UEGT1\Private\UI\SUEGT1Menu.cpp',
     'Scripts\Build.ps1',
@@ -107,6 +115,11 @@ if ($inputConfig -notmatch 'ActionName="ToggleDeveloperMode"[^\r\n]*Key=F8' -or
     $inputConfig -notmatch 'ActionName="DeveloperDescend"[^\r\n]*Key=LeftControl') {
     $errors.Add('DefaultInput.ini must bind the complete F8/F9 developer movement controls.')
 }
+if ($inputConfig -notmatch 'ActionName="CycleSimulationInspector"[^\r\n]*Key=F4' -or
+    $inputConfig -notmatch 'ActionName="SaveTownSimulation"[^\r\n]*Key=F5' -or
+    $inputConfig -notmatch 'ActionName="LoadTownSimulation"[^\r\n]*Key=F6') {
+    $errors.Add('DefaultInput.ini must bind the F4 inspector and F5/F6 simulation persistence controls.')
+}
 
 $settingsConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultGameUserSettings.ini') -Raw
 if ($settingsConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1GameUserSettings\]\r?$' -or
@@ -118,12 +131,23 @@ if ($settingsConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1GameUserSettings\]\r?$
 $gameConfig = Get-Content -LiteralPath (Join-Path $projectRoot 'Config\DefaultGame.ini') -Raw
 if ($gameConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1RegionSettings\]\r?$' -or
     $gameConfig -notmatch '(?m)^TileRadius=5\r?$' -or
+	$gameConfig -notmatch '(?m)^WestTileExtension=3\r?$' -or
+	$gameConfig -notmatch '(?m)^TownWestExtension=13000\.000000\r?$' -or
     $gameConfig -notmatch '(?m)^CoastStart=3600\.000000\r?$' -or
     $gameConfig -notmatch '(?m)^MountainMaxElevation=2600\.000000\r?$') {
-    $errors.Add('DefaultGame.ini does not define the v0.3 regional generation profile.')
+    $errors.Add('DefaultGame.ini does not define the v0.5 regional generation profile.')
 }
 if ($gameConfig -notmatch '(?m)^\+DirectoriesToAlwaysCook=\(Path="/Game/Materials"\)\r?$') {
     $errors.Add('DefaultGame.ini must cook the authored Signal Grove materials used by runtime-generated instances.')
+}
+if ($gameConfig -notmatch '(?m)^\[/Script/UEGT1\.UEGT1TownSimulationSettings\]\r?$' -or
+    $gameConfig -notmatch '(?m)^NPCCount=100\r?$' -or
+	$gameConfig -notmatch '(?m)^TownSeed=7319\r?$' -or
+	$gameConfig -notmatch 'CitizenWalkSpeedCentimetersPerSecond=440\.000000' -or
+	$gameConfig -notmatch '(?m)^\+ActionDefinitions=\(Action=Eat,VenueType=Home,[^\r\n]*Cost=1\.000000' -or
+	$gameConfig -notmatch '(?m)^\+ActionDefinitions=\(Action=Work,[^\r\n]*DurationMinutes=60\.000000[^\r\n]*Earnings=0\.000000' -or
+	([regex]::Matches($gameConfig, '(?m)^\+JobDefinitions=')).Count -ne 20) {
+	$errors.Add('DefaultGame.ini does not define the town population, $1 groceries, hourly work, and twenty-job catalog.')
 }
 foreach ($map in @('Main', 'TechDemo')) {
     $mapPattern = '(?m)^\+MapsToCook=\(FilePath="/Game/Maps/{0}"\)\r?$' -f $map
@@ -138,8 +162,8 @@ $externalActorCount = if (Test-Path -LiteralPath $externalActorFolder -PathType 
 } else {
     0
 }
-if ($externalActorCount -lt 130) {
-    $errors.Add("The Main World Partition is incomplete; expected at least 130 regional external actor packages, found $externalActorCount.")
+if ($externalActorCount -lt 160) {
+	$errors.Add("The Main World Partition is incomplete; expected at least 160 west-expanded regional external actor packages, found $externalActorCount.")
 }
 
 if ($errors.Count -gt 0) {

@@ -18,6 +18,7 @@
 #include "UEGT1GameMode.h"
 #include "UI/UEGT1HUD.h"
 #include "World/UEGT1WorldLayout.h"
+#include "World/UEGT1DayNight.h"
 #include "World/UEGT1RegionSettings.h"
 #include "World/UEGT1TechDemoEnvironment.h"
 
@@ -40,7 +41,9 @@ bool FUEGT1ProjectConfigurationTest::RunTest(const FString& Parameters)
 
 	const UInputSettings* InputSettings = GetDefault<UInputSettings>();
 	for (const FName Action : { FName(TEXT("Jump")), FName(TEXT("Sprint")), FName(TEXT("Interact")), FName(TEXT("ToggleDiagnostics")),
-		FName(TEXT("ToggleDeveloperMode")), FName(TEXT("ToggleDeveloperFlight")), FName(TEXT("DeveloperDescend")), FName(TEXT("PauseMenu")) })
+		FName(TEXT("CycleSimulationInspector")), FName(TEXT("SaveTownSimulation")), FName(TEXT("LoadTownSimulation")),
+		FName(TEXT("ToggleDeveloperMode")), FName(TEXT("ToggleDeveloperFlight")), FName(TEXT("DeveloperDescend")), FName(TEXT("PauseMenu")),
+		FName(TEXT("ToggleWorldMap")) })
 	{
 		TArray<FInputActionKeyMapping> Mappings;
 		InputSettings->GetActionMappingByName(Action, Mappings);
@@ -152,9 +155,12 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FUEGT1WorldLayoutTest::RunTest(const FString& Parameters)
 {
 	const UUEGT1RegionSettings& RegionSettings = UUEGT1RegionSettings::Get();
-	TestEqual(TEXT("The configurable region uses an eleven-by-eleven tile foundation"), UEGT1WorldLayout::GetExpectedTileCount(), 121);
+	TestEqual(TEXT("The west-expanded region uses a fourteen-by-eleven tile foundation"), UEGT1WorldLayout::GetExpectedTileCount(), 154);
+	TestEqual(TEXT("The region adds three tile columns only to the west"), UEGT1WorldLayout::GetMinTileX(), -8);
+	TestEqual(TEXT("The established east edge remains unchanged"), UEGT1WorldLayout::GetMaxTileX(), 5);
 	TestEqual(TEXT("The region settings drive the deterministic seed"), RegionSettings.WorldSeed, UEGT1WorldLayout::GetWorldSeed());
-	TestTrue(TEXT("The region spans more than 300 metres"), UEGT1WorldLayout::GetWorldHalfExtent() * 2.0f > 30000.0f);
+	TestTrue(TEXT("The one-direction expansion creates a region wider than 400 metres"),
+		UEGT1WorldLayout::GetWorldMaxX() - UEGT1WorldLayout::GetWorldMinX() > 40000.0f);
 
 	const TArray<FName>& Ids = UEGT1WorldLayout::GetWaystoneIds();
 	const TArray<FVector>& Locations = UEGT1WorldLayout::GetWaystoneLocations();
@@ -163,11 +169,12 @@ bool FUEGT1WorldLayoutTest::RunTest(const FString& Parameters)
 
 	TSet<FName> UniqueIds(Ids);
 	TestEqual(TEXT("Waystone IDs are unique"), UniqueIds.Num(), Ids.Num());
-	const float WorldHalfExtent = UEGT1WorldLayout::GetWorldHalfExtent();
+	const float WorldHalfExtentY = (UEGT1WorldLayout::GetTileRadius() + 0.5f) * UEGT1WorldLayout::GetTileSize();
 	for (int32 Index = 0; Index < Locations.Num(); ++Index)
 	{
 		TestTrue(*FString::Printf(TEXT("Waystone %s is inside the authored world"), *Ids[Index].ToString()),
-			FMath::Abs(Locations[Index].X) < WorldHalfExtent && FMath::Abs(Locations[Index].Y) < WorldHalfExtent);
+			Locations[Index].X > UEGT1WorldLayout::GetWorldMinX() && Locations[Index].X < UEGT1WorldLayout::GetWorldMaxX() &&
+			FMath::Abs(Locations[Index].Y) < WorldHalfExtentY);
 		TestTrue(*FString::Printf(TEXT("Waystone %s is meaningfully separated from the sanctuary"), *Ids[Index].ToString()),
 			FVector::Dist2D(Locations[Index], UEGT1WorldLayout::GetSanctuaryLocation()) > 2500.0f);
 		TestTrue(TEXT("The connecting trail remains reserved from biome clutter"),
@@ -176,11 +183,13 @@ bool FUEGT1WorldLayoutTest::RunTest(const FString& Parameters)
 
 	const FUEGT1RegionSample Center = UEGT1WorldLayout::SampleRegion(FVector::ZeroVector);
 	const FUEGT1RegionSample East = UEGT1WorldLayout::SampleRegion(FVector(15000.0f, 0.0f, 0.0f));
-	const FUEGT1RegionSample West = UEGT1WorldLayout::SampleRegion(FVector(-15000.0f, 0.0f, 0.0f));
+	const FUEGT1RegionSample WestTownExpansion = UEGT1WorldLayout::SampleRegion(FVector(-8500.0f, 0.0f, 0.0f));
+	const FUEGT1RegionSample West = UEGT1WorldLayout::SampleRegion(FVector(-22000.0f, 0.0f, 0.0f));
 	const FUEGT1RegionSample North = UEGT1WorldLayout::SampleRegion(FVector(0.0f, 15000.0f, 0.0f));
 	const FUEGT1RegionSample South = UEGT1WorldLayout::SampleRegion(FVector(0.0f, -15000.0f, 0.0f));
 	const FUEGT1RegionSample CoastTransition = UEGT1WorldLayout::SampleRegion(FVector(6000.0f, 0.0f, 0.0f));
 	TestEqual(TEXT("The center is town"), Center.GetDominantBiome(), EUEGT1RegionBiome::Town);
+	TestEqual(TEXT("The town biome follows the westward expansion"), WestTownExpansion.GetDominantBiome(), EUEGT1RegionBiome::Town);
 	TestEqual(TEXT("The east opens into ocean"), East.GetDominantBiome(), EUEGT1RegionBiome::Ocean);
 	TestEqual(TEXT("The west becomes farmland"), West.GetDominantBiome(), EUEGT1RegionBiome::Farmland);
 	TestEqual(TEXT("The north becomes highlands"), North.GetDominantBiome(), EUEGT1RegionBiome::Highlands);
@@ -189,6 +198,40 @@ bool FUEGT1WorldLayoutTest::RunTest(const FString& Parameters)
 		CoastTransition.Biomes.Coast > 0.2f && CoastTransition.Biomes.Meadow > 0.2f);
 	TestTrue(TEXT("The northern terrain rises into mountains"), North.SurfaceHeight > Center.SurfaceHeight + 1200.0f);
 	TestTrue(TEXT("The ocean floor sits beneath sea level"), East.SurfaceHeight < UEGT1WorldLayout::GetSeaLevel() - 200.0f && East.WaterDepth > 200.0f);
+	return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FUEGT1DayNightCycleTest,
+	"UEGT1.Environment.DayNightCycle",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FUEGT1DayNightCycleTest::RunTest(const FString& Parameters)
+{
+	const FUEGT1DayNightState Midnight = UEGT1DayNight::Evaluate(0.0f);
+	const FUEGT1DayNightState Sunrise = UEGT1DayNight::Evaluate(6.0f);
+	const FUEGT1DayNightState Noon = UEGT1DayNight::Evaluate(12.0f);
+	const FUEGT1DayNightState Sunset = UEGT1DayNight::Evaluate(18.0f);
+	const FUEGT1DayNightState WrappedMidnight = UEGT1DayNight::Evaluate(24.0f);
+
+	TestEqual(TEXT("Midnight is classified as night"), Midnight.Phase, EUEGT1DayPhase::Night);
+	TestEqual(TEXT("Six o'clock begins dawn"), Sunrise.Phase, EUEGT1DayPhase::Dawn);
+	TestEqual(TEXT("Noon is classified as day"), Noon.Phase, EUEGT1DayPhase::Day);
+	TestEqual(TEXT("Six o'clock begins dusk"), Sunset.Phase, EUEGT1DayPhase::Dusk);
+	TestTrue(TEXT("The sun crosses the horizon at sunrise"), FMath::IsNearlyZero(Sunrise.SunElevationDegrees, 0.1f));
+	TestTrue(TEXT("The sun reaches a high noon arc"), Noon.SunElevationDegrees > 60.0f);
+	TestTrue(TEXT("The sun is below the island at midnight"), Midnight.SunElevationDegrees < -60.0f);
+	TestTrue(TEXT("The sun crosses the horizon at sunset"), FMath::IsNearlyZero(Sunset.SunElevationDegrees, 0.1f));
+	TestTrue(TEXT("Sun azimuth travels across the sky"), FMath::Abs(Noon.SunAzimuthDegrees - Sunrise.SunAzimuthDegrees) > 60.0f);
+	TestTrue(TEXT("Noon sunlight is physically much brighter than midnight"), Noon.SunIntensityLux > Midnight.SunIntensityLux + 60000.0f);
+	TestTrue(TEXT("Night skylight stays dim but preserves cool navigation silhouettes"),
+		Midnight.SkyLightIntensity >= 0.10f && Midnight.SkyLightIntensity < 0.16f);
+	TestTrue(TEXT("Day skylight reaches the authored daylight level"), Noon.SkyLightIntensity > 0.85f);
+	TestTrue(TEXT("Night exposure adapts substantially without changing physical light intensity"),
+		Midnight.ExposureEV100 < Noon.ExposureEV100 - 6.0f);
+	TestTrue(TEXT("Sunrise and sunset use a low horizon intensity"), Sunrise.SunIntensityLux < Noon.SunIntensityLux * 0.08f &&
+		Sunset.SunIntensityLux < Noon.SunIntensityLux * 0.08f);
+	TestTrue(TEXT("Hours wrap consistently across midnight"), FMath::IsNearlyEqual(Midnight.SunIntensityLux, WrappedMidnight.SunIntensityLux));
 	return !HasAnyErrors();
 }
 

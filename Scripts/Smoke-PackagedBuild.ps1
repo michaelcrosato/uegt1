@@ -34,10 +34,20 @@ $regionLog = Join-Path $logFolder 'SignalGrove-RegionSmoke.log'
 $regionScreenshotFolder = Join-Path $screenshotFolder 'Region'
 $regionScreenshots = @(
     (Join-Path $regionScreenshotFolder '01-CenterTown.png'),
-    (Join-Path $regionScreenshotFolder '02-EastWaterfront.png'),
-    (Join-Path $regionScreenshotFolder '03-WestFarmland.png'),
-    (Join-Path $regionScreenshotFolder '04-NorthHighlands.png'),
-    (Join-Path $regionScreenshotFolder '05-SouthTropics.png')
+    (Join-Path $regionScreenshotFolder '02-WestTownExpansion.png'),
+    (Join-Path $regionScreenshotFolder '03-EastWaterfront.png'),
+    (Join-Path $regionScreenshotFolder '04-WestFarmland.png'),
+    (Join-Path $regionScreenshotFolder '05-NorthHighlands.png'),
+    (Join-Path $regionScreenshotFolder '06-SouthTropics.png')
+)
+$environmentLog = Join-Path $logFolder 'SignalGrove-DayNightMapSmoke.log'
+$environmentScreenshotFolder = Join-Path $screenshotFolder 'DayNightMap'
+$environmentScreenshots = @(
+    (Join-Path $environmentScreenshotFolder '01-Dawn.png'),
+    (Join-Path $environmentScreenshotFolder '02-Noon.png'),
+    (Join-Path $environmentScreenshotFolder '03-GoldenHour.png'),
+    (Join-Path $environmentScreenshotFolder '04-Midnight.png'),
+    (Join-Path $environmentScreenshotFolder '05-WorldMap.png')
 )
 $techDemoLog = Join-Path $logFolder 'LumenWilds-PackagedSmoke.log'
 $techDemoScreenshotFolder = Join-Path $screenshotFolder 'LumenWilds'
@@ -47,8 +57,9 @@ $techDemoScreenshots = @(
     (Join-Path $techDemoScreenshotFolder '03-CanopyFlight.png')
 )
 New-Item -ItemType Directory -Path $regionScreenshotFolder -Force | Out-Null
+New-Item -ItemType Directory -Path $environmentScreenshotFolder -Force | Out-Null
 New-Item -ItemType Directory -Path $techDemoScreenshotFolder -Force | Out-Null
-foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot, $levelMenuLog, $levelMenuScreenshot, $regionLog, $techDemoLog) + $regionScreenshots + $techDemoScreenshots) {
+foreach ($oldArtifact in @($runtimeLog, $screenshot, $menuLog, $menuScreenshot, $levelMenuLog, $levelMenuScreenshot, $regionLog, $environmentLog, $techDemoLog) + $regionScreenshots + $environmentScreenshots + $techDemoScreenshots) {
     if (Test-Path -LiteralPath $oldArtifact) {
         Remove-Item -LiteralPath $oldArtifact -Force
     }
@@ -87,8 +98,12 @@ $requiredSignals = @(
     'Runtime PlayerStart ready:',
     'Automated smoke restored recommended settings before capture.',
     'Automated view: Location=V(Y=-1350.00',
-    'Regional foundation ready: Seed=7319 Tiles=121 Expected=121',
-    'Town foundation ready: Buildings=',
+    'Regional foundation ready: Seed=7319 Tiles=154 Expected=154',
+	'Town foundation ready: Buildings=49',
+	'Interiors=49 ActivityStations=102',
+	'Venues=52 Streets=18 Beds=100',
+	'Town simulation ready: Seed=7319 NPCs=100 Spawned=100 Venues=52 Jobs=20 Beds=100 AssignedBeds=100 RelatedHouseholds=100',
+	'Resident visual interpolation observed:',
     'Waystone activated: Id=EastRise',
     'Waystone activated: Id=WestHollow',
     'Waystone activated: Id=SouthWatch',
@@ -240,7 +255,7 @@ $regionArguments = @(
     "-UEGT1RegionCaptureFolder=$regionScreenshotFolder",
     "-abslog=$regionLog"
 )
-Write-Host 'Running five-view rendered regional smoke'
+Write-Host 'Running six-view rendered regional smoke'
 $regionProcess = Start-Process -FilePath $Executable -ArgumentList $regionArguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Hidden -PassThru
 if (-not $regionProcess.WaitForExit($TimeoutSeconds * 1000)) {
     Stop-Process -Id $regionProcess.Id -Force
@@ -255,7 +270,7 @@ foreach ($regionScreenshot in $regionScreenshots) {
     }
 }
 $regionLogText = Get-Content -LiteralPath $regionLog -Raw
-foreach ($view in @('CenterTown', 'EastWaterfront', 'WestFarmland', 'NorthHighlands', 'SouthTropics')) {
+foreach ($view in @('CenterTown', 'WestTownExpansion', 'EastWaterfront', 'WestFarmland', 'NorthHighlands', 'SouthTropics')) {
     if (-not $regionLogText.Contains("Automated regional screenshot requested: View=$view")) {
         throw "Packaged regional capture is missing the $view view."
     }
@@ -265,16 +280,67 @@ foreach ($biomeSignal in @('Dominant=Town', 'Dominant=Coast', 'Dominant=Farmland
         throw "Packaged regional capture is missing expected sampler signal: $biomeSignal"
     }
 }
-if (-not $regionLogText.Contains('Regional foundation ready: Seed=7319 Tiles=121 Expected=121') -or
+if (-not $regionLogText.Contains('Regional foundation ready: Seed=7319 Tiles=154 Expected=154') -or
     $regionLogText.Contains('Regional tile coverage mismatch')) {
     throw 'Packaged regional capture did not load the complete configured tile grid.'
 }
 if ($regionLogText.Contains('missing usage flag') -or $regionLogText.Contains('Default Material will be used in game')) {
     throw 'Packaged regional capture substituted Unreal default materials; inspect material usage flags.'
 }
-Write-Host 'Packaged regional smoke passed: town, waterfront, farmland, highlands, and tropics rendered from deterministic viewpoints.'
+Write-Host 'Packaged regional smoke passed: center town, west expansion, waterfront, farmland, highlands, and tropics rendered from deterministic viewpoints.'
 Write-Host "Regional log: $regionLog"
 Write-Host "Regional screenshots: $regionScreenshotFolder"
+
+$environmentArguments = @(
+    '-RenderOffscreen',
+    '-Windowed',
+    '-ResX=1920',
+    '-ResY=1080',
+    '-unattended',
+    '-nosplash',
+    '-UEGT1SmokeResetSettings',
+    "-UEGT1EnvironmentCaptureFolder=$environmentScreenshotFolder",
+    "-abslog=$environmentLog"
+)
+Write-Host 'Running rendered day/night and full-island map smoke'
+$environmentProcess = Start-Process -FilePath $Executable -ArgumentList $environmentArguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Hidden -PassThru
+if (-not $environmentProcess.WaitForExit($TimeoutSeconds * 1000)) {
+    Stop-Process -Id $environmentProcess.Id -Force
+    throw "Packaged day/night and map capture did not finish within $TimeoutSeconds seconds."
+}
+if ($environmentProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $environmentLog -PathType Leaf)) {
+    throw "Packaged day/night and map capture failed with exit code $($environmentProcess.ExitCode). Inspect $environmentLog."
+}
+foreach ($environmentScreenshot in $environmentScreenshots) {
+    if (-not (Test-Path -LiteralPath $environmentScreenshot -PathType Leaf)) {
+        throw "Packaged day/night and map capture did not create $environmentScreenshot."
+    }
+}
+$environmentHashes = $environmentScreenshots | ForEach-Object { (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash } | Select-Object -Unique
+if ($environmentHashes.Count -ne $environmentScreenshots.Count) {
+    throw 'Packaged day/night and map capture produced duplicate frames; the renderer did not reflect every requested environment state.'
+}
+$environmentLogText = Get-Content -LiteralPath $environmentLog -Raw
+foreach ($view in @('Dawn', 'Noon', 'GoldenHour', 'Midnight', 'WorldMap')) {
+    if (-not $environmentLogText.Contains("Automated environment screenshot requested: View=$view")) {
+        throw "Packaged environment capture is missing the $view view."
+    }
+}
+foreach ($phase in @('Dawn', 'Day', 'Dusk', 'Night')) {
+    if (-not $environmentLogText.Contains("Day/night phase: $phase")) {
+        throw "Packaged environment capture is missing the $phase lighting phase."
+    }
+}
+if (-not $environmentLogText.Contains('World map opened.')) {
+    throw 'Packaged environment capture did not open the full-island world map.'
+}
+if ($environmentLogText.Contains('Sun=None') -or $environmentLogText.Contains('Sky=None') -or
+    $environmentLogText.Contains('Fog=None') -or $environmentLogText.Contains('Exposure=None')) {
+    throw 'Packaged environment capture did not resolve every authored lighting actor.'
+}
+Write-Host 'Packaged environment smoke passed: dawn, noon, golden hour, midnight, and the service-indexed world map rendered.'
+Write-Host "Environment log: $environmentLog"
+Write-Host "Environment screenshots: $environmentScreenshotFolder"
 
 $techDemoArguments = @(
     '-RenderOffscreen',

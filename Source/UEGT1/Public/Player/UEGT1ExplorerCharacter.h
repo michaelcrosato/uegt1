@@ -7,6 +7,11 @@
 class UCameraComponent;
 class UUEGT1InteractionComponent;
 
+namespace UEGT1PlayerMovement
+{
+	constexpr float DefaultWalkSpeed = 480.0f;
+}
+
 UCLASS()
 class UEGT1_API AUEGT1ExplorerCharacter : public ACharacter
 {
@@ -52,6 +57,9 @@ private:
 	void ApplyMovementTuning();
 	void Interact();
 	void ToggleDiagnostics();
+	void CycleSimulationInspector();
+	void SaveTownSimulation();
+	void LoadTownSimulation();
 
 	UPROPERTY(VisibleAnywhere, Category = "UEGT1|Components")
 	TObjectPtr<UCameraComponent> FirstPersonCamera;
@@ -60,7 +68,7 @@ private:
 	TObjectPtr<UUEGT1InteractionComponent> InteractionComponent;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Movement")
-	float WalkSpeed = 480.0f;
+	float WalkSpeed = UEGT1PlayerMovement::DefaultWalkSpeed;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UEGT1|Movement")
 	float SprintSpeed = 760.0f;

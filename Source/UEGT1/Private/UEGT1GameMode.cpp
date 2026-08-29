@@ -13,6 +13,7 @@
 #include "Player/UEGT1ExplorerCharacter.h"
 #include "Player/UEGT1PlayerController.h"
 #include "Settings/UEGT1GameUserSettings.h"
+#include "Simulation/UEGT1TownSimulationSubsystem.h"
 #include "TimerManager.h"
 #include "UI/UEGT1HUD.h"
 #include "UEGT1LogChannels.h"
@@ -34,8 +35,9 @@ namespace
 
 	const FUEGT1RegionCaptureView RegionCaptureViews[] = {
 		{ TEXT("CenterTown"), FVector(0.0f, -1150.0f, 0.0f), FRotator(-4.0f, 90.0f, 0.0f), 115.0f },
+		{ TEXT("WestTownExpansion"), FVector(-9000.0f, -1500.0f, 0.0f), FRotator(-5.0f, 180.0f, 0.0f), 300.0f },
 		{ TEXT("EastWaterfront"), FVector(6000.0f, 900.0f, 0.0f), FRotator(2.0f, -45.0f, 0.0f), 350.0f },
-		{ TEXT("WestFarmland"), FVector(-8500.0f, -2500.0f, 0.0f), FRotator(-5.0f, 180.0f, 0.0f), 300.0f },
+		{ TEXT("WestFarmland"), FVector(-21000.0f, -2500.0f, 0.0f), FRotator(-5.0f, 180.0f, 0.0f), 300.0f },
 		{ TEXT("NorthHighlands"), FVector(0.0f, 8500.0f, 0.0f), FRotator(4.0f, 90.0f, 0.0f), 1100.0f },
 		{ TEXT("SouthTropics"), FVector(0.0f, -8500.0f, 0.0f), FRotator(-4.0f, -90.0f, 0.0f), 250.0f }
 	};
@@ -52,6 +54,21 @@ namespace
 		{ TEXT("ValleyApproach"), FVector(0.0f, -13200.0f, 0.0f), FVector(0.0f, 2500.0f, 500.0f), 900.0f },
 		{ TEXT("LakeOverlook"), FVector(-6200.0f, 1000.0f, 0.0f), FVector(0.0f, 3400.0f, 350.0f), 1250.0f },
 		{ TEXT("CanopyFlight"), FVector(6500.0f, -2600.0f, 5600.0f), FVector(0.0f, 4000.0f, 450.0f), 0.0f }
+	};
+
+	struct FUEGT1EnvironmentCaptureView
+	{
+		const TCHAR* Name;
+		float Hour;
+		bool bShowMap;
+	};
+
+	const FUEGT1EnvironmentCaptureView EnvironmentCaptureViews[] = {
+		{ TEXT("Dawn"), 6.0f, false },
+		{ TEXT("Noon"), 12.0f, false },
+		{ TEXT("GoldenHour"), 17.5f, false },
+		{ TEXT("Midnight"), 0.0f, false },
+		{ TEXT("WorldMap"), 9.0f, true }
 	};
 }
 
@@ -115,6 +132,17 @@ void AUEGT1GameMode::StartPlay()
 		GetWorldTimerManager().SetTimer(CaptureTimerHandle, this, &AUEGT1GameMode::CaptureAutomatedSmokeFrame, 4.0f, false);
 		UE_LOG(LogUEGT1, Display, TEXT("Automated gameplay capture scheduled: %s"), *AutomatedCapturePath);
 	}
+	if (!bIsTechDemoMap && (FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeFocusResident")) ||
+		FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeFocusInterior"))))
+	{
+		GetWorldTimerManager().SetTimer(ResidentViewTimerHandle, this, &AUEGT1GameMode::PositionAutomatedResidentView, 2.5f, false);
+	}
+	float RequestedSmokeHour = 0.0f;
+	if (!bIsTechDemoMap && (FParse::Value(FCommandLine::Get(), TEXT("UEGT1SmokeTime="), RequestedSmokeHour) ||
+		FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeMap"))))
+	{
+		GetWorldTimerManager().SetTimer(WorldStateTimerHandle, this, &AUEGT1GameMode::PrepareAutomatedWorldState, 2.5f, false);
+	}
 	if (FParse::Value(FCommandLine::Get(), TEXT("UEGT1SmokeMenuCapture="), AutomatedMenuCapturePath))
 	{
 		AutomatedMenuCapturePath = FPaths::ConvertRelativePathToFull(AutomatedMenuCapturePath);
@@ -140,6 +168,15 @@ void AUEGT1GameMode::StartPlay()
 		GetWorldTimerManager().SetTimer(RegionCaptureTimerHandle, this, &AUEGT1GameMode::PositionAutomatedRegionView, 4.0f, false);
 		UE_LOG(LogUEGT1, Display, TEXT("Automated regional capture sequence scheduled: %s"), *AutomatedRegionCaptureFolder);
 	}
+	if (!bIsTechDemoMap && FParse::Value(FCommandLine::Get(), TEXT("UEGT1EnvironmentCaptureFolder="), AutomatedEnvironmentCaptureFolder))
+	{
+		AutomatedEnvironmentCaptureFolder = FPaths::ConvertRelativePathToFull(AutomatedEnvironmentCaptureFolder);
+		IFileManager::Get().MakeDirectory(*AutomatedEnvironmentCaptureFolder, true);
+		AutomatedEnvironmentCaptureIndex = 0;
+		GetWorldTimerManager().SetTimer(EnvironmentCaptureTimerHandle, this, &AUEGT1GameMode::PositionAutomatedEnvironmentView, 4.0f, false);
+		UE_LOG(LogUEGT1, Display, TEXT("Automated day/night and world-map capture sequence scheduled: %s"),
+			*AutomatedEnvironmentCaptureFolder);
+	}
 	if (bIsTechDemoMap && FParse::Value(FCommandLine::Get(), TEXT("UEGT1TechDemoCaptureFolder="), AutomatedTechDemoCaptureFolder))
 	{
 		AutomatedTechDemoCaptureFolder = FPaths::ConvertRelativePathToFull(AutomatedTechDemoCaptureFolder);
@@ -148,6 +185,107 @@ void AUEGT1GameMode::StartPlay()
 		GetWorldTimerManager().SetTimer(TechDemoCaptureTimerHandle, this, &AUEGT1GameMode::PositionAutomatedTechDemoView, 5.0f, false);
 		UE_LOG(LogUEGT1, Display, TEXT("Automated Lumen Wilds capture sequence scheduled: %s"), *AutomatedTechDemoCaptureFolder);
 	}
+}
+
+void AUEGT1GameMode::PositionAutomatedEnvironmentView()
+{
+	if (AutomatedEnvironmentCaptureIndex >= static_cast<int32>(UE_ARRAY_COUNT(EnvironmentCaptureViews)))
+	{
+		FinishAutomatedSmokeRun();
+		return;
+	}
+	const FUEGT1EnvironmentCaptureView& View = EnvironmentCaptureViews[AutomatedEnvironmentCaptureIndex];
+	if (UUEGT1TownSimulationSubsystem* Simulation = GetWorld()->GetSubsystem<UUEGT1TownSimulationSubsystem>();
+		Simulation && Simulation->IsSimulationRunning())
+	{
+		const float CurrentHour = Simulation->GetModel().GetHourOfDay();
+		const float HoursToAdvance = FMath::Fmod(View.Hour - CurrentHour + 24.0f, 24.0f);
+		Simulation->AdvanceSimulationMinutes(HoursToAdvance * 60.0f);
+	}
+	if (View.bShowMap)
+	{
+		if (AUEGT1PlayerController* PlayerController = Cast<AUEGT1PlayerController>(GetWorld()->GetFirstPlayerController()))
+		{
+			PlayerController->OpenWorldMapForAutomation();
+		}
+	}
+	UE_LOG(LogUEGT1, Display, TEXT("Automated environment view positioned: View=%s Hour=%.2f Map=%s"),
+		View.Name, View.Hour, View.bShowMap ? TEXT("open") : TEXT("closed"));
+	GetWorldTimerManager().SetTimer(EnvironmentCaptureTimerHandle, this, &AUEGT1GameMode::CaptureAutomatedEnvironmentFrame, 1.0f, false);
+}
+
+void AUEGT1GameMode::CaptureAutomatedEnvironmentFrame()
+{
+	const FUEGT1EnvironmentCaptureView& View = EnvironmentCaptureViews[AutomatedEnvironmentCaptureIndex];
+	const FString CapturePath = FPaths::Combine(AutomatedEnvironmentCaptureFolder,
+		FString::Printf(TEXT("%02d-%s.png"), AutomatedEnvironmentCaptureIndex + 1, View.Name));
+	FScreenshotRequest::RequestScreenshot(CapturePath, false, false);
+	UE_LOG(LogUEGT1, Display, TEXT("Automated environment screenshot requested: View=%s Path=%s"), View.Name, *CapturePath);
+	++AutomatedEnvironmentCaptureIndex;
+	if (AutomatedEnvironmentCaptureIndex < UE_ARRAY_COUNT(EnvironmentCaptureViews))
+	{
+		GetWorldTimerManager().SetTimer(EnvironmentCaptureTimerHandle, this, &AUEGT1GameMode::PositionAutomatedEnvironmentView, 1.25f, false);
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(ExitTimerHandle, this, &AUEGT1GameMode::FinishAutomatedSmokeRun, 2.0f, false);
+	}
+}
+
+void AUEGT1GameMode::PrepareAutomatedWorldState()
+{
+	UUEGT1TownSimulationSubsystem* Simulation = GetWorld()->GetSubsystem<UUEGT1TownSimulationSubsystem>();
+	float RequestedHour = 0.0f;
+	const bool bHasRequestedHour = FParse::Value(FCommandLine::Get(), TEXT("UEGT1SmokeTime="), RequestedHour);
+	if (Simulation && Simulation->IsSimulationRunning() && bHasRequestedHour)
+	{
+		RequestedHour = FMath::Fmod(FMath::Fmod(RequestedHour, 24.0f) + 24.0f, 24.0f);
+		const float CurrentHour = Simulation->GetModel().GetHourOfDay();
+		const float HoursToAdvance = FMath::Fmod(RequestedHour - CurrentHour + 24.0f, 24.0f);
+		Simulation->AdvanceSimulationMinutes(HoursToAdvance * 60.0f);
+	}
+	if (FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeMap")))
+	{
+		if (AUEGT1PlayerController* PlayerController = Cast<AUEGT1PlayerController>(GetWorld()->GetFirstPlayerController()))
+		{
+			PlayerController->OpenWorldMapForAutomation();
+		}
+	}
+	UE_LOG(LogUEGT1, Display, TEXT("Automated world state prepared: Time=%.2f Map=%s"),
+		Simulation && Simulation->IsSimulationRunning() ? Simulation->GetModel().GetHourOfDay() : -1.0f,
+		FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeMap")) ? TEXT("open") : TEXT("closed"));
+}
+
+void AUEGT1GameMode::PositionAutomatedResidentView()
+{
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+	APawn* Pawn = PlayerController ? PlayerController->GetPawn() : nullptr;
+	UUEGT1TownSimulationSubsystem* Simulation = GetWorld()->GetSubsystem<UUEGT1TownSimulationSubsystem>();
+	if (!Pawn || !Simulation || Simulation->GetModel().GetNPCs().IsEmpty())
+	{
+		return;
+	}
+
+	const bool bFocusInterior = FParse::Param(FCommandLine::Get(), TEXT("UEGT1SmokeFocusInterior"));
+	if (bFocusInterior)
+	{
+		Simulation->AdvanceSimulationMinutes(360.0f);
+	}
+	const FUEGT1NPCSimulationState& NPC = Simulation->GetModel().GetNPCs()[0];
+	const FUEGT1TownVenueState* Home = Simulation->GetModel().GetVenues().FindByPredicate([&NPC](const FUEGT1TownVenueState& Venue)
+	{
+		return Venue.VenueId == NPC.HomeId;
+	});
+	const FVector ViewLocation = bFocusInterior && Home
+		? Home->InteriorEntryLocation + FVector(0.0f, 0.0f, 92.0f)
+		: (Home ? Home->AccessPoint : NPC.WorldLocation - FVector(500.0f, 0.0f, 0.0f)) + FVector(0.0f, 0.0f, 150.0f);
+	const FVector Target = bFocusInterior && Home ? Home->KitchenLocation + FVector(0.0f, 0.0f, 80.0f)
+		: NPC.WorldLocation + FVector(0.0f, 0.0f, 100.0f);
+	const FRotator ViewRotation = (Target - ViewLocation).Rotation();
+	Pawn->SetActorLocation(ViewLocation, false, nullptr, ETeleportType::TeleportPhysics);
+	PlayerController->SetControlRotation(ViewRotation);
+	UE_LOG(LogUEGT1, Display, TEXT("Automated resident view: NPC=%s Interior=%s Thought=\"%s\" Location=%s"),
+		*NPC.NpcId.ToString(), bFocusInterior ? TEXT("true") : TEXT("false"), *NPC.CurrentThought, *NPC.WorldLocation.ToCompactString());
 }
 
 void AUEGT1GameMode::CaptureAutomatedSmokeFrame()

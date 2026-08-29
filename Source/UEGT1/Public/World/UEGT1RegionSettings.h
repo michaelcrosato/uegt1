@@ -18,17 +18,23 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Layout", meta = (ClampMin = "2", ClampMax = "16"))
 	int32 TileRadius = 5;
 
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Layout", meta = (ClampMin = "0", ClampMax = "16"))
+	int32 WestTileExtension = 3;
+
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Layout", meta = (ClampMin = "800.0"))
 	float TileSize = 3200.0f;
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Town", meta = (ClampMin = "500.0"))
-	float TownCoreRadius = 2200.0f;
+	float TownCoreRadius = 3200.0f;
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Town", meta = (ClampMin = "1000.0"))
-	float TownBlendRadius = 4800.0f;
+	float TownBlendRadius = 6200.0f;
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Town", meta = (ClampMin = "1000.0"))
-	float TownReserveRadius = 3800.0f;
+	float TownReserveRadius = 5600.0f;
+
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Town", meta = (ClampMin = "0.0"))
+	float TownWestExtension = 13000.0f;
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Biomes", meta = (ClampMin = "0.0"))
 	float DirectionalBiomeStart = 2800.0f;

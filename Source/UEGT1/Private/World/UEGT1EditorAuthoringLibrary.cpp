@@ -30,6 +30,31 @@ int32 UUEGT1EditorAuthoringLibrary::GetRegionTileRadius()
 	return UEGT1WorldLayout::GetTileRadius();
 }
 
+int32 UUEGT1EditorAuthoringLibrary::GetRegionMinTileX()
+{
+	return UEGT1WorldLayout::GetMinTileX();
+}
+
+int32 UUEGT1EditorAuthoringLibrary::GetRegionMaxTileX()
+{
+	return UEGT1WorldLayout::GetMaxTileX();
+}
+
+int32 UUEGT1EditorAuthoringLibrary::GetRegionMinTileY()
+{
+	return UEGT1WorldLayout::GetMinTileY();
+}
+
+int32 UUEGT1EditorAuthoringLibrary::GetRegionMaxTileY()
+{
+	return UEGT1WorldLayout::GetMaxTileY();
+}
+
+int32 UUEGT1EditorAuthoringLibrary::GetRegionExpectedTileCount()
+{
+	return UEGT1WorldLayout::GetExpectedTileCount();
+}
+
 float UUEGT1EditorAuthoringLibrary::GetRegionTileSize()
 {
 	return UEGT1WorldLayout::GetTileSize();

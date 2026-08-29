@@ -22,6 +22,8 @@ public:
 	bool IsDeveloperFlightEnabled() const;
 	void RequestQuitFromMenu();
 	bool IsMenuOpen() const { return MenuWidget.IsValid(); }
+	bool IsWorldMapOpen() const { return bWorldMapOpen; }
+	void OpenWorldMapForAutomation();
 
 protected:
 	virtual void BeginPlay() override;
@@ -29,7 +31,10 @@ protected:
 
 private:
 	void ToggleMenu();
+	void ToggleWorldMap();
+	void SetWorldMapOpen(bool bOpen);
 	void TravelToLevel(FName LevelName);
 
 	TSharedPtr<class SUEGT1Menu> MenuWidget;
+	bool bWorldMapOpen = false;
 };
